@@ -774,6 +774,8 @@ int Interp::read_items(block_pointer block,      //!< pointer to a block being f
   int m_number, m_counter;  // for checking m98/m99 as o-words
   int length;
 
+
+  logDebug("read_items[%s]\n",line);
   length = strlen(line);
   counter = 0;
 
@@ -1504,6 +1506,7 @@ int Interp::read_o(    /* ARGUMENTS                                     */
   int oNumber, n;
   extern const char *o_ops[];
 
+  logDebug("read_o[%s]",line);
   if (line[*counter] == 'm' &&
       read_integer_value(line, &(n=*counter+1), &oNumber,
 			 parameters) == INTERP_OK) {
@@ -1704,12 +1707,10 @@ int Interp::read_o(    /* ARGUMENTS                                     */
           block->o_type = O_none;
           return INTERP_OK;
       }
-
       // convey starting state for call_fsm() to handle this call
       // convert_remapped_code() might change this to CS_REMAP 
       block->call_type = is_pycallable(&_setup,  OWORD_MODULE, block->o_name) ?
 	  CT_PYTHON_OWORD_SUB : CT_NGC_OWORD_SUB;
-
       for(param_cnt=0;(line[*counter] == '[') || (line[*counter] == '(');)
 	{
 	  if(line[*counter] == '(')
@@ -3074,7 +3075,6 @@ int Interp::read_text(
     int *length)       //!< a pointer to an integer to be set
 {
   int index;
-
   if (command == NULL) {
     if (fgets(raw_line, LINELEN, inport) == NULL) {
       if(_setup.skipping_to_sub)

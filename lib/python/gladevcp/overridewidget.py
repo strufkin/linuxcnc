@@ -14,42 +14,44 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-import sys,os,pango
+import sys,os
 import linuxcnc
 
 try:
-    import gobject,gtk
+    import gi
+    from gi.repository import Gtk, GObject
+    #import GObject,gtk
 except:
     print('GTK not available')
     sys.exit(1)
 
 INIPATH = os.environ.get('INI_FILE_NAME', '/dev/null')
 
-class Override(gtk.HScale):
+class Override(Gtk.HScale):
     __gtype_name__ = 'Override'
     __gproperties__ = {
-        'override_type' : ( gobject.TYPE_INT, 'Override Type', '0: Feed  1: Rapid  2: Spindle 3: Max velocity',
-                    0, 3, 0, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
+        'override_type' : ( GObject.TYPE_INT, 'Override Type', '0: Feed  1: Rapid  2: Spindle 3: Max velocity',
+                    0, 3, 0, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
     }
     __gproperties = __gproperties__
 
     def __init__(self, *a, **kw):
-        gtk.HScale.__init__(self, *a, **kw)
+        Gtk.HScale.__init__(self, *a, **kw)
         self.emc = linuxcnc
         self.status = self.emc.stat()
         self.cmd = linuxcnc.command()
         self.override_type = 0
         self.override = 1.0
         self.max_vel_convert = 100
-        self.adjustment = gtk.Adjustment(value=100, lower=0, upper=200, step_incr=1, page_incr=0, page_size=0)
+        self.adjustment = Gtk.Adjustment(value=100, lower=0, upper=200, step_incr=1, page_incr=0, page_size=0)
         self.set_type(self.override_type)
         self.set_adjustment(self.adjustment)
         self.set_digits(0)
-        self.set_value_pos(gtk.POS_LEFT)
+        self.set_value_pos(Gtk.PositionType.LEFT)
         #self.add_mark(100.0,gtk.POS_RIGHT,'')
         self.connect('value-changed',self.update_value)
         # The update time: every 100 milliseonds
-        gobject.timeout_add(100, self.periodic)
+        GObject.timeout_add(100, self.periodic)
 
     # we set the adjustment limits based on the INI entries
     def set_type(self, data=0):
@@ -144,12 +146,20 @@ class Override(gtk.HScale):
 
 # for testing without glade editor:
 def main():
-    window = gtk.Dialog("My dialog",
-                   None,
-                   gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                   (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
-                    gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
-    t = gtk.Table(rows=4, columns=1, homogeneous=True)
+    window = Gtk.Dialog("My Dialog", None, 0, 
+            ( Gtk.STOCK_CANCEL, Gtk.ResponseType.REJECT,
+                     Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT ), 
+            modal = True, 
+            destroy_with_parent = True)
+
+
+    
+    #window = gtk.Dialog("My dialog",
+    #               None,
+    #               gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+    #               (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+    #                gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+    t = Gtk.Table(rows=4, columns=1, homogeneous=True)
     window.vbox.add(t)
 
     offset1 = Override()
@@ -168,14 +178,14 @@ def main():
     offset4.set_type(3)
     t.attach(offset4, 0, 1, 3, 4)
 
-    window.connect("destroy", gtk.main_quit)
+    window.connect("destroy", Gtk.main_quit)
 
     window.show_all()
     response = window.run()
-    if response == gtk.RESPONSE_ACCEPT:
-       print "ok"
+    if response == Gtk.ResponseType.ACCEPT:
+       print ("ok")
     else:
-       print "cancel"
+       print ("cancel")
 
 if __name__ == "__main__":	
     main()

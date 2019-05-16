@@ -45,6 +45,8 @@ namespace bp = boost::python;
 #include "hal.h"
 #include "hal/hal_priv.h"
 
+#include "py3c/py3c.h"
+
 enum predefined_named_parameters {
     NP_LINE,
     NP_MOTION_MODE,
@@ -324,6 +326,7 @@ int Interp::find_named_param(
   *status = 0;
 
   pi = frame->named_params.find(nameBuf);
+
   if (pi == frame->named_params.end()) { // not found
       int exists = 0;
       double inivalue;
@@ -371,13 +374,23 @@ int Interp::find_named_param(
 	       "named param - pycall(%s):\n%s", nameBuf,
 	       python_plugin->last_exception().c_str());
 	  CHKS(retval.ptr() == Py_None, "Python namedparams.%s returns no value", nameBuf);
-	  if (PyString_Check(retval.ptr())) {
+#if PY_MAJOR_VERSION >=3
+      if (PyUnicode_Check(retval.ptr())) {
+#else
+      if (PyString_Check(retval.ptr())) {
+#endif
+
 	      // returning a string sets the interpreter error message and aborts
 	      *status = 0;
 	      char *msg = bp::extract<char *>(retval);
 	      ERS("%s", msg);
 	  }
-	  if (PyInt_Check(retval.ptr())) { // widen
+#if PY_MAJOR_VERSION >=3
+     if (PyLong_Check(retval.ptr())) {
+#else
+     if (PyInt_Check(retval.ptr())) {
+#endif
+//	  if (PyInt_Check(retval.ptr())) { // widen
 	      *value = (double) bp::extract<int>(retval);
 	      *status = 1;
 	      return INTERP_OK;
@@ -390,11 +403,20 @@ int Interp::find_named_param(
 	  // ok, that callable returned something botched.
 	  *status = 0;
 	  PyObject *res_str = PyObject_Str(retval.ptr());
+
 	  Py_XDECREF(res_str);
+
+
+     // PyUnicode_AsEncodedString(res_str, "utf-8");
 	  ERS("Python call %s.%s returned '%s' - expected double, int or string, got %s",
 	      NAMEDPARAMS_MODULE, nameBuf,
-	      PyString_AsString(res_str),
-	      retval.ptr()->ob_type->tp_name);
+#if PY_MAJOR_VERSION >=3
+
+          PyStr_AsString(res_str),
+#else
+          PyString_AsString(res_str),
+#endif
+	      Py_TYPE(retval.ptr())->tp_name);
       } else {
 	  *value = pv->value;
 	  *status = 1;

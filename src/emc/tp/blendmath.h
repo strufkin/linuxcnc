@@ -242,4 +242,6 @@ int pmCircleAngleFromProgress(PmCircle const * const circle,
         double * const angle);
 double pmCircleEffectiveMinRadius(PmCircle const * const circle);
 
+
+
 #endif

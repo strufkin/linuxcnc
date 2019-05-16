@@ -19,36 +19,44 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-import gtk
-from gtk import gdk
-import gobject
+import gi
+from gi.repository import Gtk, GObject, Gdk
+#import gtk
+#from gtk import gdk
+#import GObject
 import math
-from hal_widgets import _HalJogWheelBase
+from .hal_widgets import _HalJogWheelBase
 
-class Hal_Dial(gtk.DrawingArea, _HalJogWheelBase):
-    __gsignals__ = dict(count_changed=(gobject.SIGNAL_RUN_FIRST,
-                                      gobject.TYPE_NONE,
-                                      (gobject.TYPE_INT, gobject.TYPE_FLOAT, gobject.TYPE_FLOAT)),
-                        scale_changed=(gobject.SIGNAL_RUN_FIRST,
-                                      gobject.TYPE_NONE,
-                                      (gobject.TYPE_INT, gobject.TYPE_FLOAT))
+
+def parse_color(color):
+    c = Gdk.RGBA()
+    c.parse(color)
+    return c.to_color()
+
+class Hal_Dial(Gtk.DrawingArea, _HalJogWheelBase):
+    __gsignals__ = dict(count_changed=(GObject.SIGNAL_RUN_FIRST,
+                                      GObject.TYPE_NONE,
+                                      (GObject.TYPE_INT, GObject.TYPE_FLOAT, GObject.TYPE_FLOAT)),
+                        scale_changed=(GObject.SIGNAL_RUN_FIRST,
+                                      GObject.TYPE_NONE,
+                                      (GObject.TYPE_INT, GObject.TYPE_FLOAT))
                         )
     __gtype_name__ = 'Hal_Dial'
     __gproperties__ = {
-        'show_counts' : ( gobject.TYPE_BOOLEAN, 'Display the counts in the widget', 'Display or not the counts value',
-                          True, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'count_type_shown' : ( gobject.TYPE_INT, 'What to display in center', '0: counts 1:scaled counts 2:delta scaled counts',
-                    0, 2, 0, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'cpr'   : ( gobject.TYPE_INT, 'Counts per revolution', 'Set the value of counts per revolution',
-                    25, 360, 100, gobject.PARAM_READWRITE|gobject.PARAM_CONSTRUCT),
-        'label' : ( gobject.TYPE_STRING, 'label', 'Sets the string to be shown in the upper part of the widget',
-                    "Dial", gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'center_color'  : ( gtk.gdk.Color.__gtype__, 'Color of the center',  "",
-                    gobject.PARAM_READWRITE),
-        'scale_adjustable' : ( gobject.TYPE_BOOLEAN, 'Allow adjustable scaling', 'Clicking can adjust the scaling.',
-                    True, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'scale' : ( gobject.TYPE_FLOAT, 'Scale', 'Sets the scale. Scale is multiplied to current counts.',
-                    .0001,1000,1, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
+        'show_counts' : ( GObject.TYPE_BOOLEAN, 'Display the counts in the widget', 'Display or not the counts value',
+                          True, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'count_type_shown' : ( GObject.TYPE_INT, 'What to display in center', '0: counts 1:scaled counts 2:delta scaled counts',
+                    0, 2, 0, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'cpr'   : ( GObject.TYPE_INT, 'Counts per revolution', 'Set the value of counts per revolution',
+                    25, 360, 100, GObject.PARAM_READWRITE|GObject.PARAM_CONSTRUCT),
+        'label' : ( GObject.TYPE_STRING, 'label', 'Sets the string to be shown in the upper part of the widget',
+                    "Dial", GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'center_color'  : ( Gdk.Color.__gtype__, 'Color of the center',  "",
+                    GObject.PARAM_READWRITE),
+        'scale_adjustable' : ( GObject.TYPE_BOOLEAN, 'Allow adjustable scaling', 'Clicking can adjust the scaling.',
+                    True, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'scale' : ( GObject.TYPE_FLOAT, 'Scale', 'Sets the scale. Scale is multiplied to current counts.',
+                    .0001,1000,1, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
                       }
     __gproperties = __gproperties__
 
@@ -56,7 +64,7 @@ class Hal_Dial(gtk.DrawingArea, _HalJogWheelBase):
         super(Hal_Dial, self).__init__()
 
         # gtk.Widget signals
-        self.connect("expose_event", self.expose)
+        self.connect("draw", self.expose)
         self.connect("button_press_event", self.button_press)
         self.connect("button_release_event", self.button_release)
         self.connect("motion_notify_event", self.motion_notify)
@@ -68,7 +76,7 @@ class Hal_Dial(gtk.DrawingArea, _HalJogWheelBase):
         self.scale = 1.0
         self.scale_adjustable = True
         self.count_type_shown=1
-        self.center_color = gtk.gdk.Color('#bdefbdefbdef') # gray
+        self.center_color = parse_color('#bdefbdefbdef') # gray
         # private
         self._minute_offset = 0 # the offset of the pointer hand
         self._last_offset = 0
@@ -77,9 +85,9 @@ class Hal_Dial(gtk.DrawingArea, _HalJogWheelBase):
         self._show_counts = True
 
         # unmask events
-        self.add_events(gdk.BUTTON_PRESS_MASK |
-                        gdk.BUTTON_RELEASE_MASK |
-                        gdk.POINTER_MOTION_MASK)
+        self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK |
+                        Gdk.EventMask.BUTTON_RELEASE_MASK |
+                        Gdk.EventMask.POINTER_MOTION_MASK)
 
     # init the hal pin management
     def _hal_init(self):
@@ -101,18 +109,24 @@ class Hal_Dial(gtk.DrawingArea, _HalJogWheelBase):
         self.set_property("label",labelcontent)
 
     def expose(self, widget, event):
+        print(widget.is_sensitive())
+        if widget.is_sensitive():
         # check for sensitivity flags so color can be changed
-        if (self.flags() & gtk.PARENT_SENSITIVE) and (self.flags() & gtk.SENSITIVE):
+        #if (self.flags() & gtk.PARENT_SENSITIVE) and (self.flags() & gtk.SENSITIVE):
             self.alpha = 1
         else:
             self.alpha = 0.3
-
-        context = widget.window.cairo_create()
+        
+        
+        w = widget.get_window()
+        #context = widget.window.cairo_create()
         self.set_size_request(100, 100)
         # set a clip region for the expose event
-        context.rectangle(event.area.x, event.area.y, event.area.width, event.area.height)
-        context.clip()
-        self.draw(context)
+        event.rectangle(0,0, w.get_width(), w.get_height())
+        event.clip()
+        #context.rectangle(event.area.x, event.area.y, w.get_width(), w.get_height())
+        #context.clip()
+        self.draw(event)
         return False
 
     def button_press(self, widget, event):
@@ -123,11 +137,11 @@ class Hal_Dial(gtk.DrawingArea, _HalJogWheelBase):
             self.start_drag(widget,event)
         if not self.scale_adjustable:
             return False
-        if button1 and (event.type == gtk.gdk._2BUTTON_PRESS):
+        if button1 and (event.type == Gdk.EventType._2BUTTON_PRESS):
             self.scale=self.scale*.10
             self.redraw_canvas()
             self.emit("scale_changed", self._count,self.scale)
-        if button3 and (event.type == gtk.gdk._2BUTTON_PRESS):
+        if button3 and (event.type == Gdk.EventType._2BUTTON_PRESS):
             self.scale=self.scale*10
             self.redraw_canvas()
             self.emit("scale_changed", self._count,self.scale)
@@ -136,7 +150,7 @@ class Hal_Dial(gtk.DrawingArea, _HalJogWheelBase):
         button1 = event.button == 1
         button2 = event.button == 2
         button3 = event.button == 3
-        shift = event.state & gtk.gdk.SHIFT_MASK
+        shift = event.state & Gdk.ModifierType.SHIFT_MASK
         if not button1:return
         if self._dragging:
             self._dragging = False
@@ -145,11 +159,11 @@ class Hal_Dial(gtk.DrawingArea, _HalJogWheelBase):
 
     # handle the scroll wheel of the mouse
     def _scroll(self, widget, event):
-        if event.direction == gtk.gdk.SCROLL_UP:
+        if event.direction == Gdk.ScrollDirection.UP:
             self._count += 1
             self._minute_offset +=1
             self._delta_scaled += self.scale
-        if event.direction == gtk.gdk.SCROLL_DOWN:
+        if event.direction == Gdk.ScrollDirection.DOWN:
             self._count -= 1
             self._minute_offset -=1
             self._delta_scaled -= self.scale
@@ -161,6 +175,9 @@ class Hal_Dial(gtk.DrawingArea, _HalJogWheelBase):
         minutes = self._minute_offset
         # from
         # http://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html
+        #print(dir(widget))
+        #print(dir(event))
+        
         px = event.x - widget.get_allocation().width / 2
         py = widget.get_allocation().height / 2 - event.y
         lx = math.sin(math.pi / (self.cpr/2.0) * minutes)
@@ -220,8 +237,8 @@ class Hal_Dial(gtk.DrawingArea, _HalJogWheelBase):
 
     def draw(self, context):
         rect = self.get_allocation()
-        x = self.allocation.width/2
-        y = self.allocation.height/2
+        x = self.get_allocated_width()/2
+        y = self.get_allocated_height()/2
 
         radius = min(rect.width / 2.0, rect.height / 2.0) - 5
         # black rim
@@ -242,7 +259,7 @@ class Hal_Dial(gtk.DrawingArea, _HalJogWheelBase):
         # rim ticks
         # we color the zero tick red - which is actually the tick 3/4 the way around
         context.set_source_rgb(1, 1, 1)
-        for i in xrange(self.cpr):
+        for i in range(self.cpr):
             context.save()
             if i == self.cpr*.75:
                 context.set_source_rgb(0.9, 0.1, 0.1)
@@ -298,11 +315,20 @@ class Hal_Dial(gtk.DrawingArea, _HalJogWheelBase):
             context.show_text(str(self.scale))
 
     def redraw_canvas(self):
-        if self.window:
-            alloc = self.get_allocation()
-            self.queue_draw_area(alloc.x, alloc.y, alloc.width, alloc.height)
-            self.window.process_updates(True)
-            self.queue_draw()
+        #print(self)
+        #print(dir(self))
+        alloc = self.get_allocated_size().allocation
+        #print(dir(self.get_allocated_size()))       
+        #print(self.get_allocation())       
+        w = self.get_window()
+        self.queue_draw_area(alloc.x,alloc.y,alloc.width,alloc.height)
+        w.process_updates(True)
+        self.queue_draw()
+        #if self.window:
+        #    alloc = self.get_allocation()
+        #    self.queue_draw_area(alloc.x, alloc.y, alloc.width, alloc.height)
+        #    self.window.process_updates(True)
+        #    self.queue_draw()
 
     # Get propertys
     def do_get_property(self, property):
@@ -343,28 +369,28 @@ class Hal_Dial(gtk.DrawingArea, _HalJogWheelBase):
 
 # For testing directly
 def count_changed(widget, count,scale,delta_scale):
-    print 'delta scale =',delta_scale
-    print "Count changed - count %02i scale %f = %f" % (count,scale,count*scale)
+    print ('delta scale = {}'.format(delta_scale))
+    print ("Count changed - count %02i scale %f = %f" % (count,scale,count*scale))
 def scale_changed(widget, count,scale):
-    print "Scaled changed - count %02i scale %f = %f" % (count,scale,count*scale)
+    print ("Scaled changed - count %02i scale %f = %f" % (count,scale,count*scale))
 
 def main():
-    window = gtk.Window()
+    window = Gtk.Window()
     wheel = Hal_Dial()
     wheel.set_property('cpr', 200)
     wheel.set_property('count_type_shown', 2)
     wheel.set_property('label', 'Test Dial 12345')
     wheel.set_property('scale', 10.5)
     wheel.set_property('scale_adjustable', True)
-    wheel.set_property('center_color', gtk.gdk.Color('#bdefbdefbdef'))
+    wheel.set_property('center_color', parse_color('#bdefbdefbdef'))
     window.add(wheel)
-    window.connect("destroy", gtk.main_quit)
+    window.connect("destroy", Gtk.main_quit)
     window.set_title("Hal_Dial")
     wheel.connect("count_changed", count_changed)
     wheel.connect("scale_changed", scale_changed)
     window.show_all()
 
-    gtk.main()
+    Gtk.main()
 
 if __name__ == "__main__":
     main()

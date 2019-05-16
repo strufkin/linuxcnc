@@ -47,7 +47,7 @@
 """
 
 
-from Tkinter import *
+from tkinter import *
 from hal import *
 import math
 import bwidget
@@ -427,7 +427,8 @@ class pyvcp_meter(Canvas):
         x,y = self.p2c(0.8, self.alfa)
         self.coords(self.line,self.mid,self.mid,x,y)
 
-    def draw_region(self, (start, end, color)):
+    def draw_region(self, region):
+            start, end, color = region
             #Draws a colored region on the canvas between start and end
             start = self.value2angle(start)
             start = -self.rad2deg(start)
@@ -638,7 +639,7 @@ class pyvcp_radiobutton(Frame):
     def changed(self):
         index=math.log(self.v.get(),2)
         index=int(index)
-        print "active:",self.halpins[index]
+        print( "active:",self.halpins[index])
 
 
 
@@ -1129,7 +1130,7 @@ class pyvcp_bar(Canvas):
         self.bh=30     # bar height
         self.bw=150    # bar width
         self.pad=((self.cw-self.bw)/2)
-		
+                
         Canvas.__init__(self,master,width=self.cw,height=self.ch)
 
         if halpin == None:
@@ -1155,7 +1156,7 @@ class pyvcp_bar(Canvas):
         start=tmp[0]
         end=tmp[1]
         self.bar=self.create_rectangle(start,2,end,self.bh-1)
-	    # default fill unless overriden
+            # default fill unless overriden
         self.itemconfig(self.bar,fill=fillcolor)
 
         # start text
@@ -1174,18 +1175,21 @@ class pyvcp_bar(Canvas):
         else:
             self.ranges = False
         
-    def set_fill(self, (start1, end1, color1),(start2, end2, color2), (start3, end3, color3)):
+    def set_fill(self, start1_end1_color1, start2_end2_color2, start3_end3_color3):
+        start1, end1, color1 = start1_end1_color1
+        start2, end2, color2 = start2_end2_color2
+        start3, end3, color3 = start3_end3_color3
         if self.value:
-    	    if (self.value > start1) and (self.value <= end1):
-    		self.itemconfig(self.bar,fill=color1)	
-    	    else:
-    		if (self.value > start2) and (self.value <= end2):
-    		    self.itemconfig(self.bar,fill=color2)	
-		else:
-		    if (self.value > start3) and (self.value <= end3):
-    			self.itemconfig(self.bar,fill=color3)	
-	
-	
+            if (self.value > start1) and (self.value <= end1):
+                self.itemconfig(self.bar,fill=color1)   
+            else:
+                if (self.value > start2) and (self.value <= end2):
+                    self.itemconfig(self.bar,fill=color2)       
+                else:
+                    if (self.value > start3) and (self.value <= end3):
+                        self.itemconfig(self.bar,fill=color3)   
+        
+        
     def bar_coords(self):
         """ calculates the coordinates in pixels for the bar """
         # the bar should start at value = zero 
@@ -1204,7 +1208,7 @@ class pyvcp_bar(Canvas):
 
         return [bar_start, bar_end]
     
-			
+                        
     def update(self,pycomp):
         # update value
         newvalue=pycomp[self.halpin]
@@ -1346,34 +1350,34 @@ class pyvcp_checkbutton(Checkbutton):
         Checkbutton.__init__(self,master,variable=self.v,onvalue=1, offvalue=0,**kw)
         if halpin == None:
             halpin = "checkbutton."+str(pyvcp_checkbutton.n)
-	self.halpin=halpin
-	pycomp.newpin(halpin, HAL_BIT, HAL_OUT)
-	changepin = halpin + ".changepin"
-	self.changepin=changepin
-	pycomp.newpin(changepin, HAL_BIT, HAL_IN)
+        self.halpin=halpin
+        pycomp.newpin(halpin, HAL_BIT, HAL_OUT)
+        changepin = halpin + ".changepin"
+        self.changepin=changepin
+        pycomp.newpin(changepin, HAL_BIT, HAL_IN)
         pycomp[self.changepin] = 0
 
-	pyvcp_checkbutton.n += 1
-		
+        pyvcp_checkbutton.n += 1
+                
         if initval >= 0.5:
             self.value=1
         else:
             self.value=0
         self.v.set(self.value)
         self.reset = 0
-		
+                
     def update(self,pycomp):
         # prevent race condition if connected to permanently on pin
-	if pycomp[self.changepin] and not(self.reset):
-	    self.v.set(not(self.v.get()))
-	    self.reset = 1
-    	    pycomp[self.changepin] = 0 # try to reset, but may not work
-	    
-	if not(pycomp[self.changepin]) and(self.reset):
-    	    self.reset = 0 
-    	    pycomp[self.changepin] = 0   # make sure is reset now
-	
-	pycomp[self.halpin]=self.v.get()
+        if pycomp[self.changepin] and not(self.reset):
+            self.v.set(not(self.v.get()))
+            self.reset = 1
+            pycomp[self.changepin] = 0 # try to reset, but may not work
+            
+        if not(pycomp[self.changepin]) and(self.reset):
+            self.reset = 0 
+            pycomp[self.changepin] = 0   # make sure is reset now
+        
+        pycomp[self.halpin]=self.v.get()
 
 
 
@@ -1586,9 +1590,9 @@ class pyvcp_include(Frame):
 
         try:
             doc = xml.dom.minidom.parse(src) 
-        except xml.parsers.expat.ExpatError, detail:
-            print "Error: could not open",src,"!"
-            print detail
+        except xml.parsers.expat.ExpatError( detail):
+            print ("Error: could not open",src,"!")
+            print (detail)
             sys.exit(1)
 
         # find the pydoc element
@@ -1597,7 +1601,7 @@ class pyvcp_include(Frame):
                 break
 
         if e.localName != "pyvcp":
-            print "Error: no pyvcp element in file!"
+            print ("Error: no pyvcp element in file!")
             sys.exit()
         pyvcproot=e
         vcpparse.nodeiterator(pyvcproot,self)
@@ -1653,7 +1657,7 @@ class _pyvcp_image(Label):
             try:
                 self.configure(image=self.images[l])
             except (IndexError, KeyError):
-                print >>sys.stderr, "Unknown image #%d on %s" % (l, self.halpin)
+                print ("Unknown image #%d on %s" % (l, self.halpin), file=sys.stderr)
         self.last = l
 
 class pyvcp_image_bit(_pyvcp_image):
@@ -1664,11 +1668,12 @@ class pyvcp_image_u32(_pyvcp_image):
 # This must come after all the pyvcp_xxx classes
 elements = []
 __all__ = []
-for _key in globals().keys():
-    if _key.startswith("pyvcp_"):
-        elements.append(_key[6:])
-        __all__.append(_key)
+for _key in tuple(globals().items()):
+    if _key[0].startswith("pyvcp_"):
+        elements.append(_key[0][6:])
+        __all__.append(_key[0])
 
+print(__all__)
 if __name__ == '__main__':
-    print "You can't run pyvcp_widgets.py by itself..."
+    print( "You can't run pyvcp_widgets.py by itself...")
 # vim:sts=4:sw=4:et:

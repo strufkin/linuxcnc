@@ -14,17 +14,27 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
+import OpenGL
+#OpenGL.ERROR_CHECKING = True
+#OpenGL.ERROR_LOGGING = True
+#OpenGL.FULL_LOGGING = True
+#OpenGL.ERROR_ON_COPY = True
 from rs274 import Translated, ArcsToSegmentsMixin, OpenGLTk
-from minigl import *
+#from minigl import *
+#from minigl import *
+from OpenGL.GL import *
+from OpenGL.GLU import *
 import math
 import glnav
 import hershey
 import linuxcnc
 import array
+import numpy as np
 import gcode
 import os
 import re
+from functools import reduce
+from operator import attrgetter
 
 def minmax(*args):
     return min(*args), max(*args)
@@ -271,19 +281,20 @@ class GLCanon(Translated, ArcsToSegmentsMixin):
     def user_defined_function(self, i, p, q):
         if self.suppress > 0: return
         color = self.colors['m1xx']
-        self.dwells_append((self.lineno, color, self.lo[0], self.lo[1], self.lo[2], self.state.plane/10-17))
+        self.dwells_append((self.lineno, color, self.lo[0], self.lo[1], self.lo[2], int(self.state.plane/10-17)))
 
     def dwell(self, arg):
         if self.suppress > 0: return
         self.dwell_time += arg
         color = self.colors['dwell']
-        self.dwells_append((self.lineno, color, self.lo[0], self.lo[1], self.lo[2], self.state.plane/10-17))
+        self.dwells_append((self.lineno, color, self.lo[0], self.lo[1], self.lo[2], int(self.state.plane/10-17)))
 
 
     def highlight(self, lineno, geometry):
         glLineWidth(3)
         c = self.colors['selected']
         glColor3f(*c)
+        print("glStart starttt \n")
         glBegin(GL_LINES)
         coords = []
         for line in self.traverse:
@@ -302,6 +313,7 @@ class GLCanon(Translated, ArcsToSegmentsMixin):
             coords.append(line[1][:3])
             coords.append(line[2][:3])
         glEnd()
+        print("glEnd enddddd\n")
         for line in self.dwells:
             if line[0] != lineno: continue
             self.draw_dwells([(line[0], c) + line[2:]], 2, 0)
@@ -333,10 +345,13 @@ class GLCanon(Translated, ArcsToSegmentsMixin):
             self.colored_lines('arc_feed', self.arcfeed, for_selection, len(self.traverse) + len(self.feed))
 
             glLineWidth(2)
-            self.draw_dwells(self.dwells, self.colors.get('dwell_alpha', 1/3.), for_selection, len(self.traverse) + len(self.feed) + len(self.arcfeed))
+            print(self.colors,dir(self.colors))
+            print("{} {} {} {} ".format(self.dwells, self.colors.get('dwell_alpha', 1/3.), for_selection, len(self.traverse) + len(self.feed) + len(self.arcfeed)))
+            self.draw_dwells(self.dwells, int(self.colors.get('dwell_alpha', 1/3.)), for_selection, len(self.traverse) + len(self.feed) + len(self.arcfeed))
             glLineWidth(1)
 
 def with_context(f):
+    print("running with context below cunction ------>",f)
     def inner(self, *args, **kw):
         self.activate()
         try:
@@ -346,6 +361,7 @@ def with_context(f):
     return inner
 
 def with_context_swap(f):
+    print("running with context below cunction ------>",f)
     def inner(self, *args, **kw):
         self.activate()
         try:
@@ -369,7 +385,8 @@ class GlCanonDraw:
         'backplottraverse': (0.30, 0.50, 0.50),
         'label_ok': (1.00, 0.51, 0.53),
         'backplotjog_alpha': 0.75,
-        'tool_diffuse': (0.60, 0.60, 0.60),
+        'tool_diffuse': (0.60, 0.60, 0.60), #orig
+        #'tool_diffuse': (0.10, 0.10, 0.10),
         'backplotfeed': (0.75, 0.25, 0.25),
         'back': (0.00, 0.00, 0.00),
         'lathetool_alpha': 0.10,
@@ -394,9 +411,11 @@ class GlCanonDraw:
         'small_origin': (0.00, 1.00, 1.00),
         'backplottoolchange_alpha': 0.25,
         'backplottraverse_alpha': 0.25,
-        'overlay_alpha': 0.75,
-        'tool_ambient': (0.40, 0.40, 0.40),
-        'tool_alpha': 0.20,
+        'overlay_alpha': 0.1,
+        'tool_ambient': (1, 1, 1),
+        #'tool_diffuse': (1, 1, 1),
+        'tool_ambient': (0.40, 0.40, 0.40), #orig
+        'tool_alpha': 0.22, #0.20
         'backplottoolchange': (1.00, 0.65, 0.00),
         'backplotarc': (0.75, 0.25, 0.50),
         'm1xx': (0.50, 0.50, 1.00),
@@ -431,7 +450,7 @@ class GlCanonDraw:
                 try:
                     test = temp % 1.234
                 except:
-                    print "Error: invalid [DISPLAY] DRO_FORMAT_IN in INI file"
+                    print("Error: invalid [DISPLAY] DRO_FORMAT_IN in INI file")
                 else:
                     self.dro_in = temp
             if self.inifile.find("DISPLAY", "DRO_FORMAT_MM"):
@@ -439,7 +458,7 @@ class GlCanonDraw:
                 try:
                     test = temp % 1.234
                 except:
-                    print "Error: invalid [DISPLAY] DRO_FORMAT_MM in INI file"
+                    print("Error: invalid [DISPLAY] DRO_FORMAT_MM in INI file")
                 else:
                     self.dro_mm = temp
 
@@ -448,8 +467,8 @@ class GlCanonDraw:
         self.kinsmodule = kinsmodule
         self.no_joint_display = self.stat.kinematics_type == linuxcnc.KINEMATICS_IDENTITY
         if (msg != ""):
-            print "init_glcanondraw %s coords=%s kinsmodule=%s no_joint_display=%d"%(
-                   msg,self.trajcoordinates,self.kinsmodule,self.no_joint_display)
+            print("init_glcanondraw %s coords=%s kinsmodule=%s no_joint_display=%d"%(
+                   msg,self.trajcoordinates,self.kinsmodule,self.no_joint_display))
 
     def realize(self):
         self.hershey = hershey.Hershey()
@@ -462,16 +481,45 @@ class GlCanonDraw:
 
     @with_context
     def basic_lighting(self):
+        arr1 = np.array([1, -1, 1, 0],'f')
+        
         glLightfv(GL_LIGHT0, GL_POSITION, (1, -1, 1, 0))
+        #glLightfv(GL_LIGHT0, GL_POSITION, arr1)
+        
+        ambient = self.colors['tool_ambient'] + (0,)
+        diffuse = self.colors['tool_diffuse'] + (0,)
+        amb_arr = np.array(ambient,'f') 
+        diff_arr = np.array(diffuse,'f') 
+
+        #glLightfv(GL_LIGHT0, GL_AMBIENT, amb_arr)
         glLightfv(GL_LIGHT0, GL_AMBIENT, self.colors['tool_ambient'] + (0,))
+        #glLightfv(GL_LIGHT0, GL_DIFFUSE, diff_arr)
         glLightfv(GL_LIGHT0, GL_DIFFUSE, self.colors['tool_diffuse'] + (0,))
-        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, (1,1,1,0))
+        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, (0,0, 0, 1))
+        apmbdiff_arr = np.array([0.6, 0.6, 0.6, 1],'f')
+        
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, (0.6,0.6,0.6,1))
+        #glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, apmbdiff_arr)
         glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT0)
         glDepthFunc(GL_LESS)
         glEnable(GL_DEPTH_TEST)
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
+        """
+        glLightfv(GL_LIGHT0, GL_POSITION, (1, -1, 1, 0))
+        #glLightfv(GL_LIGHT0, GL_AMBIENT, (.4, .4, .4, 1))
+        glLightfv(GL_LIGHT0, GL_AMBIENT, (.0, .0, .0, 1))
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, (.0, .0, .0, 1))
+        glEnable(GL_LIGHTING)
+        glEnable(GL_LIGHT0)
+        glDepthFunc(GL_LESS)
+        glEnable(GL_DEPTH_TEST)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+        """
+
+        print("basic_lighting glGetError()", glGetError())
 
     def select(self, x, y):
         if self.canon is None: return
@@ -502,7 +550,7 @@ class GlCanonDraw:
             break
 
         if buffer:
-            min_depth, max_depth, names = min(buffer)
+            min_depth, max_depth, names = min(buffer,key=attrgetter('near'))
             self.set_highlight_line(names[0])
         else:
             self.set_highlight_line(None)
@@ -524,7 +572,7 @@ class GlCanonDraw:
         glDeleteLists(base, count)
 
     def __del__(self):
-        for base, count in self._dlists.values():
+        for base, count in list(self._dlists.values()):
             glDeleteLists(base, count)
 
     def update_highlight_variable(self,line):
@@ -560,19 +608,23 @@ class GlCanonDraw:
 
     @with_context_swap
     def redraw_perspective(self):
-
+        print("redraw_perspective glGetError", glGetError())
+        print("winfo w",self.winfo_width())
+        print("winfo h",self.winfo_height())
         w = self.winfo_width()
         h = self.winfo_height()
         glViewport(0, 0, w, h)
 
+        print("2redraw_perspective glGetError", glGetError())
         # Clear the background and depth buffer.
         glClearColor(*(self.colors['back'] + (0,)))
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
+        print("3redraw_perspective glGetError", glGetError())
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         gluPerspective(self.fovy, float(w)/float(h), self.near, self.far + self.distance)
-
+        print(self.distance)
         gluLookAt(0, 0, self.distance,
             0, 0, 0,
             0., 1., 0.)
@@ -586,33 +638,41 @@ class GlCanonDraw:
 
     @with_context_swap
     def redraw_ortho(self):
+        print("start re4draw_ortho glGetError", glGetError())
         if not self.initialised: return
 
         w = self.winfo_width()
         h = self.winfo_height()
         glViewport(0, 0, w, h)
 
+        print("1redraw_ortho glGetError", glGetError())
         # Clear the background and depth buffer.
         glClearColor(*(self.colors['back'] + (0,)))
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
+        print("2redraw_ortho glGetError", glGetError())
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         ztran = self.distance
         k = (abs(ztran or 1)) ** .55555
         l = k * h / w
         glOrtho(-k, k, -l, l, -1000, 1000.)
+        print(ztran)
 
-        gluLookAt(0, 0, 1,
-            0, 0, 0,
-            0., 1., 0.)
+        gluLookAt(0, 0, 1, 0, 0, 0, 0., 1., 0.)
+
         glMatrixMode(GL_MODELVIEW)
+        #glMultMatrixf(M);
+        #glTranslated(-eyex, -eyey, -eyez);
+        #glMultMatrixf(M);
+        #glTranslated(0, 0, 1);
         glPushMatrix()
         try:
             self.redraw()
         finally:
             glFlush()                               # Tidy up
             glPopMatrix()                   # Restore the matrix
+        print("stop redraw_ortho glGetError", glGetError())
 
     def color_limit(self, cond):
         if cond:
@@ -655,6 +715,7 @@ class GlCanonDraw:
         # x dimension
 
         self.color_limit(0)
+        print("lgBegin start\n")
         glBegin(GL_LINES)
         if view != x and g.max_extents[x] > g.min_extents[x]:
             y_pos = g.min_extents[y] - pullback
@@ -693,6 +754,7 @@ class GlCanonDraw:
             glVertex3f(x_pos + dashwidth, y_pos + zdashwidth, g.max_extents[z])
 
         glEnd()
+        print("glEnd end\n")
 
         # Labels
         if self.get_show_relative():
@@ -864,20 +926,29 @@ class GlCanonDraw:
         if self.canon and self.canon.grid: return self.canon.grid
         return 5./25.4
 
-    def comp(self, (sx, sy), (cx, cy)):
+    def comp(self, xxx_todo_changeme, xxx_todo_changeme4):
+        (sx, sy) = xxx_todo_changeme
+        (cx, cy) = xxx_todo_changeme4
         return -(sx*cx + sy*cy) / (sx*sx + sy*sy)
 
-    def param(self, (x1, y1), (dx1, dy1), (x3, y3), (dx3, dy3)):
+    def param(self, xxx_todo_changeme5, xxx_todo_changeme6, xxx_todo_changeme7, xxx_todo_changeme8):
+        (x1, y1) = xxx_todo_changeme5
+        (dx1, dy1) = xxx_todo_changeme6
+        (x3, y3) = xxx_todo_changeme7
+        (dx3, dy3) = xxx_todo_changeme8
         den = (dy3)*(dx1) - (dx3)*(dy1)
         if den == 0: return 0
         num = (dx3)*(y1-y3) - (dy3)*(x1-x3)
         return num * 1. / den
 
-    def draw_grid_lines(self, space, (ox, oy), (dx, dy), lim_min, lim_max,
+    def draw_grid_lines(self, space, xxx_todo_changeme9, xxx_todo_changeme10, lim_min, lim_max,
             inverse_permutation):
+        print("draw_grid_lines ------->>")
         # draw a series of line segments of the form
         #   dx(x-ox) + dy(y-oy) + k*space = 0
         # for integers k that intersect the AABB [lim_min, lim_max]
+        (ox, oy) = xxx_todo_changeme9
+        (dx, dy) = xxx_todo_changeme10
         lim_pts = [
                 (lim_min[0], lim_min[1]),
                 (lim_max[0], lim_min[1]),
@@ -963,32 +1034,36 @@ class GlCanonDraw:
             cos_rot = 1.
             sin_rot = 0.
         glDepthMask(False)
+        print("glBegin start draw_grid_lines\n")
         glBegin(GL_LINES)
         self.draw_grid_lines(grid_size, offset, (cos_rot, sin_rot),
                 lim_min, lim_max, inverse_permutation)
         self.draw_grid_lines(grid_size, offset, (sin_rot, -cos_rot),
                 lim_min, lim_max, inverse_permutation)
         glEnd()
+        print("glEnd end grid_lines\n")
         glDepthMask(True)
 
     def draw_grid(self):
+        print("Start DrawGriddd")
         x,y,z,p = 0,1,2,3
         view = self.get_view()
         if view == p: return
         rotation = math.radians(self.stat.rotation_xy % 90)
         if rotation != 0 and view != z and self.get_show_relative(): return
         permutations = [
-                lambda (x, y, z): (z, y, x),  # YZ X
-                lambda (x, y, z): (z, x, y),  # ZX Y
-                lambda (x, y, z): (x, y, z),  # XY Z
+                lambda x_y_z: (x_y_z[2], x_y_z[1], x_y_z[0]),  # YZ X
+                lambda x_y_z1: (x_y_z1[2], x_y_z1[0], x_y_z1[1]),  # ZX Y
+                lambda x_y_z2: (x_y_z2[0], x_y_z2[1], x_y_z2[2]),  # XY Z
         ]
         inverse_permutations = [
-                lambda (z, y, x): (x, y, z),  # YZ X
-                lambda (z, x, y): (x, y, z),  # ZX Y
-                lambda (x, y, z): (x, y, z),  # XY Z
+                lambda z_y_x: (z_y_x[2], z_y_x[1], z_y_x[0]),  # YZ X
+                lambda z_x_y: (z_x_y[1], z_x_y[2], z_x_y[0]),  # ZX Y
+                lambda x_y_z3: (x_y_z3[0], x_y_z3[1], x_y_z3[2]),  # XY Z
         ]
         self.draw_grid_permuted(rotation, permutations[view],
                 inverse_permutations[view])
+        print("End DrawGrid")
 
     def all_joints_homed(self):
         for i in range (self.stat.joints):
@@ -1053,12 +1128,12 @@ class GlCanonDraw:
         if iconname is "home":
             if idx in self.show_icon_home_list: return
             self.show_icon_home_list.append(idx)
-            glBitmap(width,height,xorig,yorig,xmove,ymove,homeicon)
+            glBitmap(width,height,xorig,yorig,xmove,ymove,homeicon.tostring())
             return
         if iconname is "limit":
             if idx in self.show_icon_limit_list: return
             self.show_icon_limit_list.append(idx)
-            glBitmap(width,height,xorig,yorig,xmove,ymove,limiticon)
+            glBitmap(width,height,xorig,yorig,xmove,ymove,limiticon.tostring())
             return
 
     def redraw(self):
@@ -1068,6 +1143,8 @@ class GlCanonDraw:
         machine_limit_min, machine_limit_max = self.soft_limits()
 
         glDisable(GL_LIGHTING)
+        glEnable(GL_NORMALIZE)
+
         glMatrixMode(GL_MODELVIEW)
         self.draw_grid()
         if self.get_show_program():
@@ -1089,8 +1166,8 @@ class GlCanonDraw:
                 self.show_extents()
 
         if self.get_show_live_plot() or self.get_show_program():
-    
             alist = self.dlist(('axes', self.get_view()), gen=self.draw_axes)
+            print("GOT ALIST", alist)
             glPushMatrix()
             if self.get_show_relative() and (s.g5x_offset[0] or s.g5x_offset[1] or s.g5x_offset[2] or
                                              s.g92_offset[0] or s.g92_offset[1] or s.g92_offset[2] or
@@ -1103,10 +1180,12 @@ class GlCanonDraw:
 
 
                 if self.get_show_offsets() and (g5x_offset[0] or g5x_offset[1] or g5x_offset[2]):
+                    print("glBegin start\n")
                     glBegin(GL_LINES)
                     glVertex3f(0,0,0)
                     glVertex3f(*g5x_offset)
                     glEnd()
+                    print("glEnd end\n")
 
                     i = s.g5x_index
                     if i<7:
@@ -1131,11 +1210,13 @@ class GlCanonDraw:
 
                 
                 if  self.get_show_offsets() and (g92_offset[0] or g92_offset[1] or g92_offset[2]):
+                    print("glStart start\n")
                     glBegin(GL_LINES)
                     glVertex3f(0,0,0)
                     glVertex3f(*g92_offset)
                     glEnd()
 
+                    print("glEnd end\n")
                     glPushMatrix()
                     glScalef(0.2,0.2,0.2)
                     if self.is_lathe():
@@ -1160,13 +1241,14 @@ class GlCanonDraw:
             else:
                 glCallList(alist)
             glPopMatrix()
-
+        
         if self.get_show_limits():
             glTranslatef(*[-x for x in self.to_internal_units(s.tool_offset)[:3]])
             glLineWidth(1)
             glColor3f(1.0,0.0,0.0)
             glLineStipple(1, 0x1111)
             glEnable(GL_LINE_STIPPLE)
+            print("glStart start")
             glBegin(GL_LINES)
 
             glVertex3f(machine_limit_min[0], machine_limit_min[1], machine_limit_max[2])
@@ -1208,10 +1290,10 @@ class GlCanonDraw:
             glVertex3f(machine_limit_max[0], machine_limit_min[1], machine_limit_max[2])
 
             glEnd()
+            print("glEnd end\n")
             glDisable(GL_LINE_STIPPLE)
             glLineStipple(2, 0x5555)
             glTranslatef(*self.to_internal_units(s.tool_offset)[:3])
-
         if self.get_show_live_plot():
             glDepthFunc(GL_LEQUAL)
             glLineWidth(3)
@@ -1232,7 +1314,6 @@ class GlCanonDraw:
             glDisable(GL_BLEND)
             glLineWidth(1)
             glDepthFunc(GL_LESS)
-
         if self.get_show_tool():
             pos = self.lp.last(self.get_show_live_plot())
             if pos is None: pos = [0] * 6
@@ -1303,7 +1384,7 @@ class GlCanonDraw:
                     glColor3f(*self.colors['cone'])
                     glCallList(self.dlist('tool'))
                 glPopMatrix()
-
+        
         glMatrixMode(GL_PROJECTION)
         glPushMatrix()
         glLoadIdentity()
@@ -1312,7 +1393,6 @@ class GlCanonDraw:
         glMatrixMode(GL_MODELVIEW)
         glPushMatrix()
         glLoadIdentity()
-
         limit, homed, posstrs, droposstrs = self.posstrs()
 
         charwidth, linespace, base = self.get_font_info()
@@ -1325,15 +1405,17 @@ class GlCanonDraw:
         glEnable(GL_BLEND)
         glBlendFunc(GL_ONE, GL_CONSTANT_ALPHA)
         glColor3f(*self.colors['overlay_background'])
+        a = 1-self.colors['overlay_alpha']
         glBlendColor(0,0,0,1-self.colors['overlay_alpha'])
+        print("glBegin start\n")
         glBegin(GL_QUADS)
         glVertex3f(0, ypos, 1)
         glVertex3f(0, ypos - 8 - linespace*len(posstrs), 1)
         glVertex3f(pixel_width+42, ypos - 8 - linespace*len(posstrs), 1)
         glVertex3f(pixel_width+42, ypos, 1)
         glEnd()
+        print("glEnd end\n")
         glDisable(GL_BLEND)
-
         maxlen = 0
         ypos -= linespace+5
         glColor3f(*self.colors['overlay_foreground'])
@@ -1389,9 +1471,9 @@ class GlCanonDraw:
 
                 glRasterPos2i(0, ypos)
                 if (idx == -2 or idx == -6): # use allhomed icon display
-                    glBitmap(13, 16, 0, 3, 17, 0, allhomedicon)
+                    glBitmap(13, 16, 0, 3, 17, 0, allhomedicon.tostring())
                 if (idx == -4 or idx == -6): # use atleastonelimit display
-                    glBitmap(13, 16, 0, 3, 17, 0, somelimiticon)
+                    glBitmap(13, 16, 0, 3, 17, 0, somelimiticon.tostring())
                 if (idx <= -2):
                     ypos -= linespace
                     continue
@@ -1453,6 +1535,8 @@ class GlCanonDraw:
 
     def jnum_for_aletter(self,aletter,kinsmodule,trajcoordinates):
         aletter = aletter.upper()
+        print("aletter",aletter)
+        print("trajcoordinates",trajcoordinates)
         if "trivkins" in kinsmodule:
             return trajcoordinates.index(aletter)
         else:
@@ -1521,7 +1605,7 @@ class GlCanonDraw:
             # N.B. no conversion here because joint positions are unitless
             #      joint_mode and display_joint
             posstrs = ["  %s:% 9.4f" % i for i in
-                zip(range(self.get_num_joints()), s.joint_actual_position)]
+                zip(list(range(self.get_num_joints())), s.joint_actual_position)]
             droposstrs = posstrs
         return limit, homed, posstrs, droposstrs
 
@@ -1586,7 +1670,7 @@ class GlCanonDraw:
         glNewList(n, GL_COMPILE)
         r = 2.0/25.4
         glColor3f(*self.colors['small_origin'])
-
+        print("glBegin start\n")
         glBegin(GL_LINE_STRIP)
         for i in range(37):
             theta = (i*10)*math.pi/180.0
@@ -1619,6 +1703,7 @@ class GlCanonDraw:
         glVertex3f(0.0, -r,  r)
         glVertex3f(0.0,  r, -r)
         glEnd()
+        print("glEnd end\n")
         glEndList()
 
     def draw_axes(self, n, letters="XYZ"):
@@ -1627,8 +1712,8 @@ class GlCanonDraw:
         s = self.stat
         view = self.get_view()
 
-
         glColor3f(*self.colors['axis_x'])
+        print("glBegin start\n")
         glBegin(GL_LINES)
         glVertex3f(1.0,0.0,0.0)
         glVertex3f(0.0,0.0,0.0)
@@ -1656,6 +1741,7 @@ class GlCanonDraw:
         glVertex3f(0.0,0.0,0.0)
         glVertex3f(0.0,1.0,0.0)
         glEnd()
+        print("glEnd end\n")
 
         if view != y:
             glPushMatrix()
@@ -1669,11 +1755,12 @@ class GlCanonDraw:
             glPopMatrix()
 
         glColor3f(*self.colors['axis_z'])
+        print("glStart start\n")
         glBegin(GL_LINES)
         glVertex3f(0.0,0.0,0.0)
         glVertex3f(0.0,0.0,1.0)
         glEnd()
-
+        print("glend end\n")
         if view != z:
             glPushMatrix()
             glTranslatef(0, 0, 1.2)
@@ -1719,21 +1806,24 @@ class GlCanonDraw:
         glDisable(GL_CULL_FACE)#lathe tool needs to be visable form both sides
         radius = self.to_internal_linear_unit(diameter) / 2.
         glColor3f(*self.colors['lathetool'])
+        print("glBegin start \n")
         glBegin(GL_LINES)
         glVertex3f(-radius/2.0,0.0,0.0)
         glVertex3f(radius/2.0,0.0,0.0)
         glVertex3f(0.0,0.0,-radius/2.0)
         glVertex3f(0.0,0.0,radius/2.0)
         glEnd()
-
+        print("glEnd end\n")
         glNormal3f(0,1,0)
 
         if orientation == 9:
+            print("glBegin start\n")
             glBegin(GL_TRIANGLE_FAN)
             for i in range(37):
                 t = i * math.pi / 18
                 glVertex3f(radius * math.cos(t), 0.0, radius * math.sin(t))
             glEnd()
+            print("glEnd end\n")
         else:
             dx, dy = self.lathe_shapes[orientation]
 
@@ -1755,6 +1845,7 @@ class GlCanonDraw:
 
             sz = max(w, 3*radius)
 
+            print("glBegin start\n")
             glBegin(GL_TRIANGLE_FAN)
             glVertex3f(
                 radius * dx + radius * math.sin(circleminangle) + sz * sinmin,
@@ -1771,6 +1862,7 @@ class GlCanonDraw:
                 radius * dy + radius * math.cos(circlemaxangle) + sz * cosmax)
 
             glEnd()
+            print("glEnd End\n")
         glEnable(GL_CULL_FACE)
         glDepthFunc(GL_LESS)
 

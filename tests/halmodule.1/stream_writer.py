@@ -7,10 +7,12 @@ writer = hal.stream(c, hal.streamer_base, 10, "bfsu")
 for i in range(9):
     assert writer.writable
     writer.write((i % 2, i, i, i))
+
 assert not writer.writable
 assert writer.num_overruns == 0
 try:
     writer.write((1,1,1,1))
+
 except:
     pass
 else:

@@ -42,7 +42,7 @@ for opt in sys.argv[1:]:
     elif opt == '-f':
         force = 1
     elif opt[0] == '-':
-        print "Unknown command line option to update_ini, exiting"
+        print( "Unknown command line option to update_ini, exiting")
         exit()
     elif os.path.isfile(opt):
         filename = opt

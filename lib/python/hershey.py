@@ -15,7 +15,8 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-from minigl import *
+#from minigl import *
+from OpenGL.GL import *
 
 translate = {'0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '-': 10, '.': 11, 'X': 12, 'Y': 13, 'Z': 14, 'G': 15,
         'U': 16, 'V': 17, 'W': 18}
@@ -124,12 +125,14 @@ class Hershey:
     def plot_string(self, s, frac=0, bbox=0):
         glPushMatrix()
         mat = glGetDoublev(GL_MODELVIEW_MATRIX)
+        mat = mat.flatten()
         if mat[10] < -.001:
             glTranslatef(0, .5, 0)
             glRotatef(180, 0, 1, 0)
             glTranslatef(0, -.5, 0)
             frac = 1 - frac
             mat = glGetDoublev(GL_MODELVIEW_MATRIX)
+            mat = mat.flatten()
         if mat[5] < -.001:
             glTranslatef(0, .5, 0)
             glRotatef(180, 0, 0, 1)

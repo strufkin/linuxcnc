@@ -1,5 +1,5 @@
-<glade-catalog name="gladevcp" library="gladepython" supports="libglade,gtkbuilder"
-               domain="glade-3" depends="gtk+">
+<glade-catalog name="gladevcp" library="gladepython" supports="libglade,gtkbuilder,Gtk.Builder"
+               domain="glade" depends="gtk+">
     <init-function>glade_python_init</init-function>
     
     <glade-widget-classes>

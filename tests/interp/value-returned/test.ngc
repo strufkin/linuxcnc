@@ -59,4 +59,5 @@ o<endswithpass> call
 ;py,assert equal(this.return_value,0.0)
 ;py,assert this.value_returned == 0
 
+
 m2

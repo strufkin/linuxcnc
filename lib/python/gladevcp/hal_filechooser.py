@@ -17,15 +17,19 @@
 import os, sys, time, select, re
 import tempfile, atexit, shutil
 
-import gtk, gobject
 
-from hal_widgets import _HalWidgetBase
+import gi
+from gi.repository import Gtk,GObject, Gdk
+
+#import gtk, GObject
+
+from .hal_widgets import _HalWidgetBase
 import linuxcnc
 from hal_glib import GStat
 
 _ = lambda x: x
 
-from hal_actions import _EMC_ActionBase, _EMC_Action
+from .hal_actions import _EMC_ActionBase, _EMC_Action
 
 progress_re = re.compile("^FILTER_PROGRESS=(\\d*)$")
 class FilterProgram:
@@ -45,7 +49,7 @@ class FilterProgram:
         self.stderr_text = []
         self.program_filter = program_filter
         self.callback = callback
-        gobject.timeout_add(100, self.update)
+        GObject.timeout_add(100, self.update)
         #progress = Progress(1, 100)
         #progress.set_text(_("Filtering..."))
 
@@ -80,7 +84,7 @@ class FilterProgram:
             self.callback(r)
 
     def error(self, exitcode, stderr):
-        dialog = gtk.MessageDialog(None, 0, gtk.MESSAGE_ERROR, gtk.BUTTONS_CLOSE,
+        dialog = Gtk.MessageDialog(None, 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CLOSE,
                 _("The program %(program)r exited with code %(code)d.  "
                 "Any error messages it produced are shown below:")
                     % {'program': self.program_filter, 'code': exitcode})
@@ -136,7 +140,7 @@ class _EMC_FileChooser(_EMC_ActionBase):
     def _load_filters(self, inifile):
         def _e2p(n, el):
             #print "New filter %s: %s" % (n, el)
-            p = gtk.FileFilter()
+            p = Gtk.FileFilter()
             p.set_name(n)
             map(lambda s: p.add_pattern('*' + s), el)
             #print p
@@ -152,10 +156,10 @@ class _EMC_FileChooser(_EMC_ActionBase):
             self.add_filter(_e2p(n, e))
         self.add_filter(_e2p("All files", ['']))
 
-class EMC_FileChooserDialog(gtk.FileChooserDialog, _EMC_FileChooser):
+class EMC_FileChooserDialog(Gtk.FileChooserDialog, _EMC_FileChooser):
     __gtype_name__ = 'EMC_FileChooserDialog'
     def __init__(self, *a, **kw):
-        gtk.FileChooserDialog.__init__(self, *a, **kw)
+        Gtk.FileChooserDialog.__init__(self, *a, **kw)
         _EMC_FileChooser._hal_init(self)
         self.connect('response', self.on_response)
 
@@ -163,10 +167,10 @@ class EMC_FileChooserDialog(gtk.FileChooserDialog, _EMC_FileChooser):
         pass
         #print ">>>", w, response
 
-class EMC_FileChooserButton(gtk.FileChooserButton, _EMC_FileChooser):
+class EMC_FileChooserButton(Gtk.FileChooserButton, _EMC_FileChooser):
     __gtype_name__ = 'EMC_FileChooserButton'
     def __init__(self, *a, **kw):
-        gtk.FileChooserButton.__init__(self, gtk.FileChooserDialog())
+        Gtk.FileChooserButton.__init__(self, Gtk.FileChooserDialog())
 
         self.connect('file-set', self.on_file_set)
 
@@ -175,7 +179,7 @@ class EMC_FileChooserButton(gtk.FileChooserButton, _EMC_FileChooser):
 
 class EMC_Action_Open(_EMC_Action, _EMC_FileChooser):
     __gtype_name__ = 'EMC_Action_Open'
-    fixed_file = gobject.property(type=str, default='', nick='Fixed file name')
+    fixed_file = GObject.property(type=str, default='', nick='Fixed file name')
 
     def _hal_init(self):
         _EMC_FileChooser._hal_init(self)
@@ -190,14 +194,14 @@ class EMC_Action_Open(_EMC_Action, _EMC_FileChooser):
         if self.fixed_file:
             self.load_file(self.fixed_file)
             return
-        dialog = EMC_FileChooserDialog(title="Open File",action=gtk.FILE_CHOOSER_ACTION_OPEN, 
-                buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK))
+        dialog = EMC_FileChooserDialog(title="Open File",action=Gtk.FileChooserAction.OPEN, 
+                buttons=(Gtk.STOCK_CANCEL,gtk.ResponseType.CANCEL,Gtk.STOCK_OPEN,ResponseType.OK))
         dialog.set_current_folder(self.currentfolder)
         dialog.show()
         r = dialog.run()
         fn = dialog.get_filename()
         dialog.hide()
-        if r == gtk.RESPONSE_OK:
+        if r == Gtk.ResponseType.OK:
             dialog.load_file(fn)
             self.currentfolder = os.path.dirname(fn)
         dialog.destroy()

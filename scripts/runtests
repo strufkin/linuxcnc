@@ -21,6 +21,7 @@ MYDIR=$(cd $MYDIR; pwd);
 TOPDIR=$(cd $MYDIR/..; pwd)
 
 . $TOPDIR/scripts/rip-environment >/dev/null
+export TCLLIBPATH=" . /home/st/devel/cncsoft/linuxcnc-dev/tcl"
 
 NUM=0
 FAIL=0; FAIL_NAMES=""

@@ -57,7 +57,7 @@ import shutil
 import os
 import sys
 
-import thread
+import _thread
 
 from minigl import *
 
@@ -104,7 +104,7 @@ class Gremlin(gtk.gtkgl.widget.DrawingArea, glnav.GlNavBase,
             C('backplotprobing'),
             self.get_geometry()
         )
-        thread.start_new_thread(self.logger.start, (.01,))
+        _thread.start_new_thread(self.logger.start, (.01,))
 
         rs274.glcanon.GlCanonDraw.__init__(self, linuxcnc.stat(), self.logger)
 
@@ -455,8 +455,8 @@ class Gremlin(gtk.gtkgl.widget.DrawingArea, glnav.GlNavBase,
 
     def report_gcode_error(self, result, seq, filename):
 
-	error_str = gcode.strerror(result)
-	sys.stderr.write("G-Code error in " + os.path.basename(filename) + "\n" + "Near line "
+        error_str = gcode.strerror(result)
+        sys.stderr.write("G-Code error in " + os.path.basename(filename) + "\n" + "Near line "
 	                 + str(seq) + " of\n" + filename + "\n" + error_str + "\n")
 
     # These are for external controlling of the view

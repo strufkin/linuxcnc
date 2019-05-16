@@ -2,7 +2,7 @@ ifeq ($(origin KERNELRELEASE), undefined)
 MAKEFLAGS += --warn-undefined-variables
 endif
 
-EXTRAFLAGS :=
+EXTRAFLAGS := -ltirpc
 EXTRA_DEBUG ?=
 
 # see http://www.cmcrossroads.com/ask-mr-make/6535-tracing-rule-execution-in-gnu-make
@@ -188,7 +188,7 @@ INCLUDE += -I$(INCLUDEPY)
 
 # Compilation options.	Perhaps some of these should come from Makefile.inc? (CXXFLAGS now does)
 INTEGER_OVERFLOW_FLAGS := -fwrapv
-OPT := -Os $(INTEGER_OVERFLOW_FLAGS)
+OPT :=  $(INTEGER_OVERFLOW_FLAGS)
 DEBUG := $(DEBUG) -g -Wall
 CFLAGS := $(INCLUDE) $(OPT) $(DEBUG) $(EXTRA_DEBUG) -DULAPI -std=gnu99 -fgnu89-inline
 CXXFLAGS := $(INCLUDE) $(CXXFLAGS)   $(EXTRA_DEBUG) -DULAPI $(DEBUG) $(OPT) -Woverloaded-virtual
@@ -985,7 +985,7 @@ motmod-objs += libnml/posemath/sincos.o $(MATHSTUB)
 
 TORTOBJS = $(foreach file,$($(patsubst %.o,%,$(1))-objs), objects/rt$(file))
 ifeq ($(BUILD_SYS),uspace)
-EXTRA_CFLAGS += -fPIC -Os
+EXTRA_CFLAGS += -fPIC  
 RTOBJS := $(sort $(foreach mod,$(obj-m),$(call TORTOBJS,$(mod))))
 
 RTDEPS := $(sort $(RTOBJS:.o=.d))
@@ -996,7 +996,7 @@ modules: $(patsubst %.o,../rtlib/%.so,$(obj-m))
 	$(Q)ld -d -r -o objects/$*.tmp $^
 	$(Q)objcopy -j .rtapi_export -O binary objects/$*.tmp objects/$*.sym
 	$(Q)(echo '{ global : '; tr -s '\0' < objects/$*.sym | xargs -r0 printf '%s;\n' | grep .; echo 'local : * ; };') > objects/$*.ver
-	$(Q)$(CC) -shared -Bsymbolic $(LDFLAGS) -Wl,--version-script,objects/$*.ver -o $@ $^ -lm
+	$(Q)$(CC) -shared -Bsymbolic $(LDFLAGS) -Wl,--version-script,objects/$*.ver -o $@ $^ -lm -Wl,-export-dynamic
 
 RTFLAGS += -fno-strict-aliasing -fwrapv
 

@@ -335,6 +335,7 @@ int Interp::parse_line(char *line,       //!< array holding a line of RS274 code
                       block_pointer block,      //!< pointer to a block to be filled     
                       setup_pointer settings)   //!< pointer to machine settings         
 {
+  logDebug("parse_line[%s]",line);
   CHP(init_block(block));
   CHP(read_items(block, line, settings->parameters));
 

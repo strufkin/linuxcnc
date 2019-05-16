@@ -18,6 +18,7 @@
 
 #define __STDC_FORMAT_MACROS
 #include <Python.h>
+#include "py3c/py3c.h"
 #include <structseq.h>
 #include <pthread.h>
 #include <structmember.h>
@@ -122,7 +123,7 @@ static PyObject *Ini_find(pyIniFile *self, PyObject *args) {
         Py_INCREF(Py_None);
         return Py_None;
     }
-    return PyString_FromString(const_cast<char*>(out));
+    return PyStr_FromString(const_cast<char*>(out));
 }
 
 static PyObject *Ini_findall(pyIniFile *self, PyObject *args) {
@@ -136,7 +137,7 @@ static PyObject *Ini_findall(pyIniFile *self, PyObject *args) {
         if(out == NULL) {
             break;
         }
-        PyList_Append(result, PyString_FromString(const_cast<char*>(out)));
+        PyList_Append(result, PyStr_FromString(const_cast<char*>(out)));
         num++;
     }
     return result;
@@ -160,8 +161,7 @@ static PyMethodDef Ini_methods[] = {
 };
 
 static PyTypeObject Ini_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                      /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "linuxcnc.ini",              /*tp_name*/
     sizeof(pyIniFile),      /*tp_basicsize*/
     0,                      /*tp_itemsize*/
@@ -248,12 +248,17 @@ static int emcSendCommand(pyCommandChannel *s, RCS_CMD_MSG & cmd) {
 }
 
 static char *get_nmlfile(void) {
+    _PyObject_Dump(m);
     PyObject *fileobj = PyObject_GetAttrString(m, "nmlfile");
     if(fileobj == NULL) return NULL;
-    return PyString_AsString(fileobj);
+    return PyStr_AsString(fileobj);
 }
 
 static int Stat_init(pyStatChannel *self, PyObject *a, PyObject *k) {
+    _PyObject_Dump(m);
+    _PyObject_Dump(a);
+    
+    _PyObject_Dump(k);
     char *file = get_nmlfile();
     if(file == NULL) return -1;
 
@@ -691,8 +696,7 @@ static PyGetSetDef Stat_getsetlist[] = {
 };
 
 static PyTypeObject Stat_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                      /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "linuxcnc.stat",             /*tp_name*/
     sizeof(pyStatChannel),  /*tp_basicsize*/
     0,                      /*tp_itemsize*/
@@ -712,7 +716,7 @@ static PyTypeObject Stat_Type = {
     0,                      /*tp_getattro*/
     0,                      /*tp_setattro*/
     0,                      /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,     /*tp_flags*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,     /*tp_flags*/
     0,                      /*tp_doc*/
     0,                      /*tp_traverse*/
     0,                      /*tp_clear*/
@@ -1345,8 +1349,7 @@ static PyMethodDef Command_methods[] = {
 };
 
 static PyTypeObject Command_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                      /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "linuxcnc.command",          /*tp_name*/
     sizeof(pyCommandChannel),/*tp_basicsize*/
     0,                      /*tp_itemsize*/
@@ -1421,7 +1424,7 @@ static PyObject* Error_poll(pyErrorChannel *s) {
         char error_string[LINELEN]; \
         strncpy(error_string, ((type*)s->c->get_address())->f, LINELEN-1); \
         error_string[LINELEN-1] = 0; \
-        PyTuple_SET_ITEM(r, 1, PyString_FromString(error_string)); \
+        PyTuple_SET_ITEM(r, 1, PyStr_FromString(error_string)); \
         break; \
     }
 #define TYPECASE(x, f) _TYPECASE(PASTE(x, _TYPE), x, f)
@@ -1436,7 +1439,7 @@ static PyObject* Error_poll(pyErrorChannel *s) {
         {
             char error_string[256];
             sprintf(error_string, "unrecognized error %" PRId32, type);
-            PyTuple_SET_ITEM(r, 1, PyString_FromString(error_string));
+            PyTuple_SET_ITEM(r, 1, PyStr_FromString(error_string));
             break;
         }
     }
@@ -1454,8 +1457,7 @@ static PyMethodDef Error_methods[] = {
 };
 
 static PyTypeObject Error_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                      /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "linuxcnc.error_channel",    /*tp_name*/
     sizeof(pyErrorChannel), /*tp_basicsize*/
     0,                      /*tp_itemsize*/
@@ -1647,6 +1649,7 @@ static PyObject *pyvertex9(PyObject *s, PyObject *o) {
 }
 
 static PyObject *pydraw_lines(PyObject *s, PyObject *o) {
+    printf("Entered DrawLines\n");
     PyListObject *li;
     int for_selection = 0;
     int i;
@@ -2084,8 +2087,7 @@ static PyMethodDef Logger_methods[] = {
 };
 
 static PyTypeObject PositionLoggerType = {
-    PyObject_HEAD_INIT(NULL)
-    0,                      /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "linuxcnc.positionlogger",   /*tp_name*/
     sizeof(pyPositionLogger), /*tp_basicsize*/
     0,                      /*tp_itemsize*/
@@ -2146,12 +2148,25 @@ METH(vertex9, "Get the 3d location for a 9d point"),
 #define ENUM(e) PyModule_AddIntConstant(m, const_cast<char*>(#e), e)
 #define ENUMX(x,e) PyModule_AddIntConstant(m, x + const_cast<char*>(#e), e)
 
-PyMODINIT_FUNC
-initlinuxcnc(void) {
+static struct PyModuleDef linuxcnc_moduledef = {
+    PyModuleDef_HEAD_INIT,  /* m_base */
+    "linuxcnc",                 /* m_name */
+    "Interface to LinuxCNC",                   /* m_doc */
+    -1,                     /* m_size */
+    emc_methods            /* m_methods */
+};
+
+//extern "C"
+//void init_hal(void) {
+MODULE_INIT_FUNC(linuxcnc)
+{
+    //PyObject *m = Py_InitModule3("_hal", module_methods,
+    //        module_doc);
+    
+
+    printf("PyModule_create entered\n");
     verbose_nml_error_messages = 0;
     clear_rcs_print_flag(~0);
-
-    m = Py_InitModule3("linuxcnc", emc_methods, "Interface to LinuxCNC");
 
     PyType_Ready(&Stat_Type);
     PyType_Ready(&Command_Type);
@@ -2159,20 +2174,25 @@ initlinuxcnc(void) {
     PyType_Ready(&Ini_Type);
     error = PyErr_NewException((char*)"linuxcnc.error", PyExc_RuntimeError, NULL);
 
+    m = PyModule_Create(&linuxcnc_moduledef);
+    printf("PyModule_PreAddObject entered\n");
     PyModule_AddObject(m, "stat", (PyObject*)&Stat_Type);
     PyModule_AddObject(m, "command", (PyObject*)&Command_Type);
     PyModule_AddObject(m, "error_channel", (PyObject*)&Error_Type);
     PyModule_AddObject(m, "ini", (PyObject*)&Ini_Type);
     PyModule_AddObject(m, "error", error);
 
+    printf("Pyodule_PreReady entered\n");
     PyType_Ready(&PositionLoggerType);
     PyModule_AddObject(m, "positionlogger", (PyObject*)&PositionLoggerType);
     pthread_mutex_init(&mutex, NULL);
 
+    printf("PyModule_PreAddString entered\n");
     PyModule_AddStringConstant(m, "PREFIX", EMC2_HOME);
     PyModule_AddStringConstant(m, "SHARE", EMC2_HOME "/share");
     PyModule_AddStringConstant(m, "nmlfile", EMC2_DEFAULT_NMLFILE);
 
+    printf("PyModule_PreAddInt entered\n");
     PyModule_AddIntConstant(m, "OPERATOR_ERROR", EMC_OPERATOR_ERROR_TYPE);
     PyModule_AddIntConstant(m, "OPERATOR_TEXT", EMC_OPERATOR_TEXT_TYPE);
     PyModule_AddIntConstant(m, "OPERATOR_DISPLAY", EMC_OPERATOR_DISPLAY_TYPE);
@@ -2180,9 +2200,12 @@ initlinuxcnc(void) {
     PyModule_AddIntConstant(m, "NML_TEXT", NML_TEXT_TYPE);
     PyModule_AddIntConstant(m, "NML_DISPLAY", NML_DISPLAY_TYPE);
 
+
+
+    printf("PyModule_PreStruntSequence entered\n");
     PyStructSequence_InitType(&ToolResultType, &tool_result_desc);
     PyModule_AddObject(m, "tool", (PyObject*)&ToolResultType);
-    PyModule_AddObject(m, "version", PyString_FromString(PACKAGE_VERSION));
+    PyModule_AddObject(m, "version", PyStr_FromString(PACKAGE_VERSION));
 
     ENUMX(4, EMC_LINEAR);
     ENUMX(4, EMC_ANGULAR);
@@ -2268,6 +2291,9 @@ initlinuxcnc(void) {
     ENUM(RCS_DONE);
     ENUM(RCS_EXEC);
     ENUM(RCS_ERROR);
+    printf("InitFinished\n");
+    _PyObject_Dump(m);
+    return m;
 }
 
 

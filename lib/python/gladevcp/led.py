@@ -1,51 +1,56 @@
 # vim: sts=4 sw=4 et
-import gtk
-import gobject
+import gi
+gi.require_version("Gtk","3.0")
+gi.require_version("Gtk","3.0")
+from gi.repository import Gtk,Gdk,GObject
+
+#import gtk
+#import GObject
 import cairo
 import math
-import gtk.glade
+#import gtk.glade
 
 # This creates the custom LED widget
 
-from hal_widgets import _HalSensitiveBase, hal_pin_changed_signal
+from .hal_widgets import _HalSensitiveBase, hal_pin_changed_signal
 
-class HAL_LED(gtk.DrawingArea, _HalSensitiveBase):
+class HAL_LED(Gtk.DrawingArea, _HalSensitiveBase):
     __gtype_name__ = 'HAL_LED'
     __gsignals__ = dict([hal_pin_changed_signal])
     __gproperties__ = {
-        'is_on' : ( gobject.TYPE_BOOLEAN, 'Is on', 'How to display LED in editor',
-                    False, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'has_hal_pin' : ( gobject.TYPE_BOOLEAN, 'Create HAL pin', 'Whether to create a HAL pin',
-                    True, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'led_shape' : ( gobject.TYPE_INT, 'Shape', '0: round 1:oval 2:square',
-                    0, 2, 0, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'led_size'  : ( gobject.TYPE_INT, 'Size', 'size of LED',
-                    5, 30, 10, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'led_blink_rate' : ( gobject.TYPE_INT, 'Blink rate',  'Led blink rate (ms)',
-                    0, 1000, 0, gobject.PARAM_READWRITE),
-        'led_shiny' : ( gobject.TYPE_BOOLEAN, 'Shiny', 'Makes the Led shiny',
-                    False, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'led_bicolor' : ( gobject.TYPE_BOOLEAN, 'Bi-Color', 'If the Led is shiny, true tells it that the (off) state is actually (on) and should be shiny too',
-                    False, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'blink_when_off' : ( gobject.TYPE_BOOLEAN, 'Blink when off', 'Choose to blink while in on state (No) or off state (Yes)',
-                    False, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'pick_color_on'  : ( gtk.gdk.Color.__gtype__, 'Pick on color',  "",
-                    gobject.PARAM_READWRITE),
-        'pick_color_off' : ( gtk.gdk.Color.__gtype__, 'Pick off color', "",
-                        gobject.PARAM_READWRITE),
-        'pick_color_blink' : ( gtk.gdk.Color.__gtype__, 'Pick blink color', "",
-                        gobject.PARAM_READWRITE),
-        'on_color'  : ( gobject.TYPE_STRING, 'LED On color', 'Use any valid Gdk color',
-                        "green", gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'off_color' : ( gobject.TYPE_STRING, 'LED OFF color', 'Use any valid Gdk color or "dark"',
-                        "red", gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'blink_color' : ( gobject.TYPE_STRING, 'LED blink color', 'Use any valid Gdk color or "dark"',
-                        "black", gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT)
+        'is_on' : ( GObject.TYPE_BOOLEAN, 'Is on', 'How to display LED in editor',
+                    False, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'has_hal_pin' : ( GObject.TYPE_BOOLEAN, 'Create HAL pin', 'Whether to create a HAL pin',
+                    True, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'led_shape' : ( GObject.TYPE_INT, 'Shape', '0: round 1:oval 2:square',
+                    0, 2, 0, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'led_size'  : ( GObject.TYPE_INT, 'Size', 'size of LED',
+                    5, 30, 10, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'led_blink_rate' : ( GObject.TYPE_INT, 'Blink rate',  'Led blink rate (ms)',
+                    0, 1000, 0, GObject.PARAM_READWRITE),
+        'led_shiny' : ( GObject.TYPE_BOOLEAN, 'Shiny', 'Makes the Led shiny',
+                    False, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'led_bicolor' : ( GObject.TYPE_BOOLEAN, 'Bi-Color', 'If the Led is shiny, true tells it that the (off) state is actually (on) and should be shiny too',
+                    False, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'blink_when_off' : ( GObject.TYPE_BOOLEAN, 'Blink when off', 'Choose to blink while in on state (No) or off state (Yes)',
+                    False, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'pick_color_on'  : ( Gdk.Color.__gtype__, 'Pick on color',  "",
+                    GObject.PARAM_READWRITE),
+        'pick_color_off' : ( Gdk.Color.__gtype__, 'Pick off color', "",
+                        GObject.PARAM_READWRITE),
+        'pick_color_blink' : ( Gdk.Color.__gtype__, 'Pick blink color', "",
+                        GObject.PARAM_READWRITE),
+        'on_color'  : ( GObject.TYPE_STRING, 'LED On color', 'Use any valid Gdk color',
+                        "green", GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'off_color' : ( GObject.TYPE_STRING, 'LED OFF color', 'Use any valid Gdk color or "dark"',
+                        "red", GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'blink_color' : ( GObject.TYPE_STRING, 'LED blink color', 'Use any valid Gdk color or "dark"',
+                        "black", GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT)
     }
     __gproperties = __gproperties__
 
     def post_create(self, obj, reason):
-                print "\nhola\n"
+                print( "\nhola\n")
 
     def __init__(self):
         super(HAL_LED, self).__init__()
@@ -55,7 +60,7 @@ class HAL_LED(gtk.DrawingArea, _HalSensitiveBase):
         self._blink_invert = False
         self._blink_magic = 0
         self.set_size_request(25, 25)
-        self.connect("expose-event", self.expose)
+        self.connect("draw", self.expose)
 
         self.led_blink_rate = 0
         self.pick_color_on = self.pick_color_off = self.pick_color_blink = None
@@ -72,9 +77,10 @@ class HAL_LED(gtk.DrawingArea, _HalSensitiveBase):
     # depending on self.state, self.blink_active, self.blink_state and the sensitive state of the parent
     # sets the fill as the on or off colour.
     def expose(self, widget, event):
-        cr = widget.window.cairo_create()
-        sensitive = self.flags() & gtk.PARENT_SENSITIVE
-        if not sensitive: alpha = .3
+        #cr = widget.window.cairo_create()
+        cr = widget.get_property('window').cairo_create()
+        #sensitive = self.flags() & gtk.PARENT_SENSITIVE
+        if not widget.is_sensitive(): alpha = .3
         else: alpha = 1
         cr.set_line_width(3)
         cr.set_source_rgba(0, 0, 0, alpha)
@@ -101,8 +107,10 @@ class HAL_LED(gtk.DrawingArea, _HalSensitiveBase):
         # square led
         if self.led_shape == 2:
             self.set_size_request(self._dia*2+5, self._dia*2+5)
-            w = self.allocation.width
-            h = self.allocation.height
+            w = self.get_allocated_width()
+            h = self.get_allocated_height()
+            #w = self.allocation.width
+            #h = self.allocation.height
             cr.translate(w/2, h/2)
             cr.rectangle(-self._dia, -self._dia, self._dia*2, self._dia*2)
             cr.stroke_preserve()
@@ -125,8 +133,11 @@ class HAL_LED(gtk.DrawingArea, _HalSensitiveBase):
         elif self.led_shape == 1:
             if self.led_shiny:
                 self.set_size_request(self._dia*2+5, self._dia*2)
-                w = self.allocation.width
-                h = self.allocation.height
+                w = self.get_allocated_width()
+                h = self.get_allocated_height()
+
+                #w = self.allocation.width
+                #h = self.allocation.height
                 cr.translate(w/2, h/2)
                 cr.scale( 1, 0.7);
 
@@ -161,8 +172,11 @@ class HAL_LED(gtk.DrawingArea, _HalSensitiveBase):
                 cr.fill()
             else:
                 self.set_size_request(self._dia*2+5, self._dia*2)
-                w = self.allocation.width
-                h = self.allocation.height
+                w = self.get_allocated_width()
+                h = self.get_allocated_height()
+
+                #w = self.allocation.width
+                #h = self.allocation.height
                 cr.translate(w/2, h/2)
                 cr.scale( 1, 0.7);
                 cr.arc(0, 0, self._dia, 0, 2*math.pi)
@@ -173,9 +187,12 @@ class HAL_LED(gtk.DrawingArea, _HalSensitiveBase):
         # round led
         else:
             if self.led_shiny:
-                self.set_size_request(self._dia*2+5, self._dia*2+5)           
-                w = self.allocation.width
-                h = self.allocation.height
+                self.set_size_request(self._dia*2+5, self._dia*2+5)          
+                w = self.get_allocated_width()
+                h = self.get_allocated_height()
+
+                #w = self.allocation.width
+                #h = self.allocation.height
                 cr.translate(w/2, h/2)
 
                 radius = self._dia
@@ -209,8 +226,10 @@ class HAL_LED(gtk.DrawingArea, _HalSensitiveBase):
                 cr.fill()
             else:
                 self.set_size_request(self._dia*2+5, self._dia*2+5)           
-                w = self.allocation.width
-                h = self.allocation.height
+                w = self.get_allocated_width()
+                h = self.get_allocated_height()
+                #w = self.allocation.width
+                #h = self.allocation.height
                 cr.translate(w/2, h/2)
                 lg2 = cairo.RadialGradient(0, 0, self._dia-2, 0, 0, self._dia+1)
                 lg2.add_color_stop_rgba(0.0, 0., 0., 0., 0.)
@@ -234,7 +253,7 @@ class HAL_LED(gtk.DrawingArea, _HalSensitiveBase):
     def set_sensitive(self, data ):
         self.set_active(data)
 
-    #FIXME the gobject timers are never explicly destroyed
+    #FIXME the GObject timers are never explicly destroyed
     def set_blink_rate(self,rate):
         if rate == 0:
             self._blink_active = False
@@ -242,7 +261,7 @@ class HAL_LED(gtk.DrawingArea, _HalSensitiveBase):
             if rate < 100:rate = 100
             self._blink_active = True
             self._blink_magic += 1
-            self._blink_timer = gobject.timeout_add(rate, self.blink, self._blink_magic)
+            self._blink_timer = GObject.timeout_add(rate, self.blink, self._blink_magic)
 
     def blink(self, magic=None):
         if not self._blink_active:
@@ -260,15 +279,15 @@ class HAL_LED(gtk.DrawingArea, _HalSensitiveBase):
     # if color = None uses colorname. only a few names supported
     # Usage: ledname.set_color("off",[r,g,b],"colorname")
     def set_color(self, state, color):
-        if isinstance(color, gtk.gdk.Color):
+        if isinstance(color, Gdk.Color):
             pass
         elif color != 'dark':
-            color = gtk.gdk.Color(color)
+            color = Gdk.color_parse(color)
         else:
             r = 0.4 * self._on_color.red
             g = 0.4 * self._on_color.green
             b = 0.4 * self._on_color.blue
-            color = gtk.gdk.Color(int(r), int(g), int(b))
+            color = Gdk.Color(int(r), int(g), int(b))
         if state == "off":
             self._off_color = color
         elif state == "on":
@@ -308,7 +327,7 @@ class HAL_LED(gtk.DrawingArea, _HalSensitiveBase):
             try:
                 self.set_color(mode, value)
             except:
-                print "Invalid %s color value: %s" % (mode, value)
+                print( "Invalid %s color value: {}{}".format(mode, value))
                 return False
         elif name in ['pick_color_on', 'pick_color_off','pick_color_blink']:
             mode = name.split('_')[-1]

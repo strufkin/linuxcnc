@@ -17,25 +17,25 @@ $(call TOOBJSDEPS, $(EMCSHSRCS)) : EXTRAFLAGS = $(ULFLAGS) $(TCL_CFLAGS) -fPIC
 
 ../tcl/linuxcnc.so: $(call TOOBJS, $(EMCSHSRCS)) ../lib/liblinuxcnc.a ../lib/liblinuxcncini.so.0 ../lib/libnml.so.0
 	$(ECHO) Linking $(notdir $@)
-	$(Q)$(CXX) -shared $(LDFLAGS) -o $@ $(ULFLAGS) $(TCL_CFLAGS) $^ $(TCL_LIBS) -lXinerama
+	$(Q)$(CXX) -shared $(LDFLAGS) -o $@ $(ULFLAGS) $(TCL_CFLAGS) $^ $(TCL_LIBS) -lXinerama -ltirpc
 TARGETS += ../tcl/linuxcnc.so
 
 ../bin/linuxcncrsh: $(call TOOBJS, $(EMCRSHSRCS)) ../lib/liblinuxcnc.a ../lib/libnml.so.0 ../lib/liblinuxcncini.so.0
 	$(ECHO) Linking $(notdir $@)
-	$(Q)$(CXX) $(LDFLAGS) -o $@ $(ULFLAGS) $^ -lpthread
+	$(Q)$(CXX) $(LDFLAGS) -o $@ $(ULFLAGS) $^ -lpthread -ltirpc
 TARGETS += ../bin/linuxcncrsh
 
 ../bin/schedrmt: $(call TOOBJS, $(EMCSCHEDSRCS)) ../lib/liblinuxcnc.a ../lib/libnml.so.0 ../lib/liblinuxcncini.so.0
 	$(ECHO) Linking $(notdir $@)
-	$(Q)$(CXX) $(LDFLAGS) -o $@ $(ULFLAGS) $^ -lpthread
+	$(Q)$(CXX) $(LDFLAGS) -o $@ $(ULFLAGS) $^ -lpthread -ltirpc
 TARGETS += ../bin/schedrmt
 
 ../bin/linuxcnclcd: $(call TOOBJS, $(EMCLCDSRCS)) ../lib/liblinuxcnc.a ../lib/libnml.so.0 ../lib/liblinuxcncini.so.0
 	$(ECHO) Linking $(notdir $@)
-	$(Q)$(CXX) $(LDFLAGS) -o $@ $(ULFLAGS) $^
+	$(Q)$(CXX) $(LDFLAGS) -o $@ $(ULFLAGS) $^ -ltirpc
 TARGETS += ../bin/linuxcnclcd
 
 ../bin/halui: $(call TOOBJS, $(HALUISRCS)) ../lib/liblinuxcnc.a ../lib/liblinuxcncini.so.0 ../lib/libnml.so.0 ../lib/liblinuxcnchal.so.0
 	$(ECHO) Linking $(notdir $@)
-	$(Q)$(CXX) $(LDFLAGS) -o $@ $(ULFLAGS) $^ 
+	$(Q)$(CXX) $(LDFLAGS) -o $@ $(ULFLAGS) $^ -ltirpc
 TARGETS += ../bin/halui

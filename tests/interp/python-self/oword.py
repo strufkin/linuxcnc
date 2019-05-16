@@ -16,19 +16,27 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 import interpreter 
+import sys
+#sys.stderr = sys.stdout
 
 def retainparam1(self,x):
     self.param1 = x
 
 def checkparam1_retained(self):
     if hasattr(self,'param1'):
-        print "param1 was retained, value = ", self.param1
+        print( "param1 was retained, value = ", self.param1)
+        sys.stdout.flush()
+
     else:
         return "param1 was not retained across invocations"
 
     # test object identity
     if hasattr(interpreter,'this'):
-	print "this is self:", self is interpreter.this
+        print( "this is self:", self is interpreter.this)
+        sys.stdout.flush()
+
     else:
-        print "module interpreter: no 'this' attribute"
+        print( "module interpreter: no 'this' attribute")
+        sys.stdout.flush()
+
         

@@ -2,8 +2,9 @@
 ; _motion_mode
 ; assert accessability and results at Python and NGC level
 
-;py,from interpreter import *
-
+;py,import interpreter
+;py,print(this.task)
+;py,print(dir(this.task))
 ; basic value access:
 ;py,assert this.params["_pi"] == 3.1415926535
 

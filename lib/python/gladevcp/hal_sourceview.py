@@ -16,35 +16,39 @@
 
 import os, time
 
-import gobject, gtk
+import gi
+from gi.repository import Gtk, GObject, Gdk,GtkSource
 
-from hal_widgets import _HalWidgetBase
+#import GObject, gtk
+
+from .hal_widgets import _HalWidgetBase
 import linuxcnc
 from hal_glib import GStat
-from hal_actions import _EMC_ActionBase, _EMC_Action
-from hal_filechooser import _EMC_FileChooser
+from .hal_actions import _EMC_ActionBase, _EMC_Action
+from .hal_filechooser import _EMC_FileChooser
 
-import gtksourceview2 as gtksourceview
+#import gtksourceview2 as gtksourceview
 
-class EMC_SourceView(gtksourceview.View, _EMC_ActionBase):
+class EMC_SourceView(GtkSource.View, _EMC_ActionBase):
     __gtype_name__ = 'EMC_SourceView'
     __gproperties__ = {
-        'idle_line_reset' : ( gobject.TYPE_BOOLEAN, 'Reset Line Number when idle', 'Sets line number back to 0 when code is not running or paused',
-                    True, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT)
+        'idle_line_reset' : ( GObject.TYPE_BOOLEAN, 'Reset Line Number when idle', 'Sets line number back to 0 when code is not running or paused',
+                    True, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT)
     }
     def __init__(self, *a, **kw):
-        gtksourceview.View.__init__(self, *a, **kw)
+        GtkSource.View.__init__(self, *a, **kw)
         self.filename = None
         self.mark = None
         self.offset = 0
         self.program_length = 0
         self.idle_line_reset = True
-        self.buf = gtksourceview.Buffer()
+        self.buf = GtkSource.Buffer()
         self.buf.set_max_undo_levels(20)
         self.buf.connect('changed', self.update_iter)
         self.set_buffer(self.buf)
-        self.lm = gtksourceview.LanguageManager()
-        self.sm = gtksourceview.StyleSchemeManager()
+        self.lm = GtkSource.LanguageManager()
+        self.sm = GtkSource.StyleSchemeManager()
+        #PORTING WARNING: neet do review sourceview specs
         if 'EMC2_HOME' in os.environ:
             path = os.path.join(os.environ['EMC2_HOME'], 'share/gtksourceview-2.0/language-specs/')
             self.lm.set_search_path(self.lm.get_search_path() + [path])
@@ -56,10 +60,11 @@ class EMC_SourceView(gtksourceview.View, _EMC_ActionBase):
         # This gets the 'selected text' color
         # This is before the widget is realized so gives the system theme color
         style = self.get_style()
-        selected_color = style.base[gtk.STATE_SELECTED].to_string()
-
-        self.set_mark_category_icon_from_icon_name('motion', 'gtk-forward')
-        self.set_mark_category_background('motion', gtk.gdk.Color(selected_color))
+        
+        #selected_color = style.base[Gtk.StateType.SELECTED].to_string()
+        selected_color = 'blue'
+        ###self.set_mark_category_icon_from_icon_name('motion', 'gtk-forward')
+        #self.set_mark_category_background('motion', Gdk.color_parse(selected_color))
 
         self.found_text_tag = self.buf.create_tag(background = selected_color)
         self.update_iter()
@@ -69,9 +74,10 @@ class EMC_SourceView(gtksourceview.View, _EMC_ActionBase):
     def change_style(self, *a):
         # This gets us the 'selected text' color after the theme is selected
         style= self.get_style()
-        selected_color = style.base[gtk.STATE_SELECTED].to_string()
-        #print "- text",style.base[gtk.STATE_SELECTED].to_string()
-        self.set_mark_category_background('motion', gtk.gdk.Color(selected_color))
+        #selected_color = style.base[Gtk.StateType.SELECTED].to_string()
+        selected_color = 'blue'
+        #print "- text"#,style.base[gtk.STATE_SELECTED].to_string()
+        #self.set_mark_category_background('motion', Gdk.color_parse(selected_color))
         self.found_text_tag.set_property('background',selected_color)
 
     def do_get_property(self, property):
@@ -90,7 +96,7 @@ class EMC_SourceView(gtksourceview.View, _EMC_ActionBase):
 
     def _hal_init(self):
         _EMC_ActionBase._hal_init(self)
-        self.gstat.connect('file-loaded', lambda w, f: gobject.timeout_add(1, self.load_file, f))
+        self.gstat.connect('file-loaded', lambda w, f: GObject.timeout_add(1, self.load_file, f))
         self.gstat.connect('line-changed', self.highlight_line)
         if self.idle_line_reset:
             self.gstat.connect('interp_idle', lambda w: self.set_line_number(0))
@@ -266,7 +272,7 @@ class EMC_SourceView(gtksourceview.View, _EMC_ActionBase):
         if self.buf.can_redo():
             self.buf.redo()
 
-def safe_write(filename, data, mode=0644):
+def safe_write(filename, data, mode='0644'):
     import os, tempfile
     fd, fn = tempfile.mkstemp(dir=os.path.dirname(filename), prefix=os.path.basename(filename))
     try:
@@ -284,7 +290,7 @@ def safe_write(filename, data, mode=0644):
 class EMC_Action_Save(_EMC_Action, _EMC_FileChooser):
     __gtype_name__ = 'EMC_Action_Save'
     __gproperties__ = { 'textview' : (EMC_SourceView.__gtype__, 'Textview',
-                    "Corresponding textview widget", gobject.PARAM_READWRITE),
+                    "Corresponding textview widget", GObject.PARAM_READWRITE),
     }
     def __init__(self, *a, **kw):
         _EMC_Action.__init__(self, *a, **kw)
@@ -330,8 +336,8 @@ class EMC_Action_SaveAs(EMC_Action_Save):
     def on_activate(self, w):
         if not self.textview:
             return
-        dialog = gtk.FileChooserDialog(title="Save As",action=gtk.FILE_CHOOSER_ACTION_SAVE,
-                    buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE,gtk.RESPONSE_OK))
+        dialog = Gtk.FileChooserDialog(title="Save As",action=Gtk.FileChooserAction.SAVE,
+                    buttons=(Gtk.STOCK_CANCEL,Gtk.ResponseType.CANCEL,Gtk.STOCK_SAVE,Gtk.ResponseType.OK))
         dialog.set_do_overwrite_confirmation(True)
         dialog.set_current_folder(self.currentfolder)
         if self.textview.filename:
@@ -340,6 +346,6 @@ class EMC_Action_SaveAs(EMC_Action_Save):
         r = dialog.run()
         fn = dialog.get_filename()
         dialog.destroy()
-        if r == gtk.RESPONSE_OK:
+        if r == Gtk.ResponseType.OK:
             self.save(fn)
             self.currentfolder = os.path.dirname(fn)

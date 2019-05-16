@@ -190,7 +190,6 @@ int Interp::execute_call(setup_pointer settings,
     context_pointer previous_frame = &settings->sub_context[settings->call_level-1];
 
     block_pointer eblock = &EXECUTING_BLOCK(*settings);
-
     logOword("execute_call %s type=%s state=%s cl=%d rl=%d", 
 	     current_frame->subName, 
 	     call_typenames[call_type],
@@ -544,7 +543,7 @@ int Interp::control_back_to( block_pointer block, // pointer to block
     offset_map_iterator it;
     offset_pointer op;
 
-    logOword("Entered:%s %s", name,block->o_name);
+    logOword("Entered:%s %s file[%s]", name,block->o_name, settings->filename);
 
     it = settings->offset_map.find(block->o_name);
     if (it != settings->offset_map.end()) {
@@ -553,6 +552,7 @@ int Interp::control_back_to( block_pointer block, // pointer to block
 	    (settings->file_pointer == NULL))  {
 	    ERS(NCE_FILE_NOT_OPEN);
 	}
+    //fprintf(stderr, "Filename [%s]", op->filename);
 	if (0 != strcmp(settings->filename,
 			op->filename)) {
 	    // open the new file...

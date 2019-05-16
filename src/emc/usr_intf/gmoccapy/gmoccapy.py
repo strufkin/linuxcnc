@@ -113,16 +113,16 @@ LIBDIR = os.path.join(BASE, "lib", "python")
 sys.path.insert(0, LIBDIR)
 
 # as now we know the libdir path we can import our own modules
-from gmoccapy import widgets       # a class to handle the widgets
-from gmoccapy import notification  # this is the module we use for our error handling
-from gmoccapy import preferences   # this handles the preferences
-from gmoccapy import getiniinfo    # this handles the INI File reading so checking is done in that module
-from gmoccapy import dialogs       # this takes the code of all our dialogs
+from .gmoccapy import widgets       # a class to handle the widgets
+from .gmoccapy import notification  # this is the module we use for our error handling
+from .gmoccapy import preferences   # this handles the preferences
+from .gmoccapy import getiniinfo    # this handles the INI File reading so checking is done in that module
+from .gmoccapy import dialogs       # this takes the code of all our dialogs
 
 _AUDIO_AVAILABLE = False
 try:
     import gst
-    from gmoccapy import player        # a class to handle sounds
+    from .gmoccapy import player        # a class to handle sounds
     _AUDIO_AVAILABLE = True
 except:
     pass
@@ -154,7 +154,7 @@ class gmoccapy(object):
         # prepare for translation / internationalisation
         locale.setlocale(locale.LC_ALL, '')
         locale.bindtextdomain("gmoccapy", LOCALEDIR)
-        gettext.install("gmoccapy", localedir=LOCALEDIR, unicode=True)
+        gettext.install("gmoccapy", localedir=LOCALEDIR, str=True)
         gettext.bindtextdomain("gmoccapy", LOCALEDIR)
 
         # needed components to comunicate with hal and linuxcnc
@@ -237,7 +237,7 @@ class gmoccapy(object):
         self.user_mode = False
         self.logofile = None
         for index, arg in enumerate(argv):
-            print(index, " = ", arg)
+            print((index, " = ", arg))
             if arg == "-user_mode":
                 self.user_mode = True
                 self.widgets.tbtn_setup.set_sensitive(False)
@@ -386,9 +386,9 @@ class gmoccapy(object):
             self.widgets.lbl_tool_measurement.show()
             self.widgets.btn_zero_g92.show()
             self.widgets.btn_block_height.hide()
-            print(_("**** GMOCCAPY INFO ****"))
-            print(_("**** no valid probe config in INI File ****"))
-            print(_("**** disabled tool measurement ****"))
+            print((_("**** GMOCCAPY INFO ****")))
+            print((_("**** no valid probe config in INI File ****")))
+            print((_("**** disabled tool measurement ****")))
         else:
             self.widgets.lbl_tool_measurement.hide()
             self.widgets.spbtn_probe_height.set_value(self.prefs.getpref("probeheight", -1.0, float))
@@ -404,9 +404,9 @@ class gmoccapy(object):
             self.widgets.btn_zero_g92.hide()
             self.widgets.btn_block_height.show()
             self._replace_list_item(4, "btn_zero_g92", "btn_block_height")
-            print(_("**** GMOCCAPY INFO ****"))
-            print(_("**** found valid probe config in INI File ****"))
-            print(_("**** will use auto tool measurement ****"))
+            print((_("**** GMOCCAPY INFO ****")))
+            print((_("**** found valid probe config in INI File ****")))
+            print((_("**** will use auto tool measurement ****")))
         self.widgets.chk_use_tool_measurement.emit("toggled")
 
 
@@ -472,7 +472,7 @@ class gmoccapy(object):
         LANGDIR = os.path.join(BASE, "share", "gtksourceview-2.0", "language-specs")
         file_path = os.path.join(LANGDIR, "gcode.lang")
         if os.path.isfile(file_path):
-            print "**** GMOCCAPY INFO: Gcode.lang found ****"
+            print("**** GMOCCAPY INFO: Gcode.lang found ****")
             self.widgets.gcode_view.set_language("gcode", LANGDIR)
 
         # set the user colors and digits of the DRO
@@ -639,13 +639,13 @@ class gmoccapy(object):
                 else:
                     continue
             if axis == self.axisletter_four:
-                print("Combi_DRO_4 = joint {0}".format(self.joint_axis_dic[axis]))
+                print(("Combi_DRO_4 = joint {0}".format(self.joint_axis_dic[axis])))
                 self.widgets.Combi_DRO_4.set_joint(self.joint_axis_dic[axis])
             elif axis == self.axisletter_five:
-                print("Combi_DRO_5 = joint {0}".format(self.joint_axis_dic[axis]))
+                print(("Combi_DRO_5 = joint {0}".format(self.joint_axis_dic[axis])))
                 self.widgets.Combi_DRO_5.set_joint(self.joint_axis_dic[axis])
             else:
-                print("Combi_DRO_{0} = joint {1}".format(axis[0], self.joint_axis_dic[axis]))
+                print(("Combi_DRO_{0} = joint {1}".format(axis[0], self.joint_axis_dic[axis])))
                 self.widgets["Combi_DRO_{0}".format(axis[0])].set_joint(self.joint_axis_dic[axis])
 
     def _init_extra_axes(self):
@@ -881,9 +881,9 @@ class gmoccapy(object):
         # We get the increments from INI File
         self.jog_increments = self.get_ini_info.get_increments()
         if len(self.jog_increments) > 10:
-            print(_("**** GMOCCAPY INFO ****"))
-            print(_("**** To many increments given in INI File for this screen ****"))
-            print(_("**** Only the first 10 will be reachable through this screen ****"))
+            print((_("**** GMOCCAPY INFO ****")))
+            print((_("**** To many increments given in INI File for this screen ****")))
+            print((_("**** Only the first 10 will be reachable through this screen ****")))
             # we shorten the incrementlist to 10 (first is default = 0)
             self.jog_increments = self.jog_increments[0:11]
 
@@ -920,19 +920,19 @@ class gmoccapy(object):
         self.screen2 = False
         screen2 = os.path.join(CONFIGPATH, "gmoccapy2.glade")
         if os.path.exists(screen2):
-            print (_("**** GMOCCAPY INFO ****"))
-            print (_("**** gmoccapy screen 2 found ****"))
+            print((_("**** GMOCCAPY INFO ****")))
+            print((_("**** gmoccapy screen 2 found ****")))
             try:
                 self.builder.add_from_file(screen2)
                 self.screen2 = True
-            except Exception, e:
-                print (_("**** GMOCCAPY ERROR ****"))
-                print _("**** screen 2 GLADE ERROR: ****")
+            except Exception as e:
+                print((_("**** GMOCCAPY ERROR ****")))
+                print(_("**** screen 2 GLADE ERROR: ****"))
                 self.widgets.tbtn_use_screen2.set_sensitive(False)
                 traceback.print_exc()
         else:
-            print (_("**** GMOCCAPY INFO ****"))
-            print _("**** No gmoccapy2.glade file present ****")
+            print((_("**** GMOCCAPY INFO ****")))
+            print(_("**** No gmoccapy2.glade file present ****"))
             self.widgets.tbtn_use_screen2.set_sensitive(False)
 
 # =============================================================
@@ -946,9 +946,9 @@ class gmoccapy(object):
 
         tab_names, tab_locations, tab_cmd = self.get_ini_info.get_embedded_tabs()
         if not tab_names:
-            print (_("**** GMOCCAPY INFO ****"))
-            print (_("**** Invalid embedded tab configuration ****"))
-            print (_("**** No tabs will be added! ****"))
+            print((_("**** GMOCCAPY INFO ****")))
+            print((_("**** Invalid embedded tab configuration ****")))
+            print((_("**** No tabs will be added! ****")))
             return
 
         try:
@@ -961,7 +961,7 @@ class gmoccapy(object):
                 self._dynamic_childs[xid] = child
                 nb.show_all()
         except:
-            print(_("ERROR, trying to initialize the user tabs or panels, check for typos"))
+            print((_("ERROR, trying to initialize the user tabs or panels, check for typos")))
         self.set_up_user_tab_widgets(tab_locations)
 
     # adds the embedded object to a notebook tab or box
@@ -978,7 +978,7 @@ class gmoccapy(object):
 
     # Gotta kill the embedded processes when gmoccapy closes
     def _kill_dynamic_childs(self):
-        for child in self._dynamic_childs.values():
+        for child in list(self._dynamic_childs.values()):
             child.terminate()
 
     def set_up_user_tab_widgets(self, tab_locations):
@@ -1104,8 +1104,8 @@ class gmoccapy(object):
     def _init_audio(self):
         # try to add ability for audio feedback to user.
         if _AUDIO_AVAILABLE:
-            print (_("**** GMOCCAPY INFO ****"))
-            print (_("**** audio available! ****"))
+            print((_("**** GMOCCAPY INFO ****")))
+            print((_("**** audio available! ****")))
 
             # the sounds to play if an error or message rises
             self.alert_sound = "/usr/share/sounds/freedesktop/stereo/dialog-warning.oga"
@@ -1117,10 +1117,10 @@ class gmoccapy(object):
             self.widgets.audio_alert_chooser.set_filename(self.alert_sound)
             self.widgets.audio_error_chooser.set_filename(self.error_sound)
         else:
-            print (_("**** GMOCCAPY INFO ****"))
-            print (_("**** no audio available! ****"))
-            print(_("**** PYGST libray not installed? ****"))
-            print(_("**** is python-gstX.XX installed? ****"))
+            print((_("**** GMOCCAPY INFO ****")))
+            print((_("**** no audio available! ****")))
+            print((_("**** PYGST libray not installed? ****")))
+            print((_("**** is python-gstX.XX installed? ****")))
 
             self.widgets.audio_alert_chooser.set_sensitive(False)
             self.widgets.audio_error_chooser.set_sensitive(False)
@@ -1267,30 +1267,30 @@ class gmoccapy(object):
                                                    stdin=subprocess.PIPE,
                                                    stdout=subprocess.PIPE,
                                                    close_fds=True)
-                print (_("**** GMOCCAPY INFO ****"))
-                print (_("**** virtual keyboard program found : <onboard>"))
+                print((_("**** GMOCCAPY INFO ****")))
+                print((_("**** virtual keyboard program found : <onboard>")))
             elif os.path.isfile("/usr/bin/matchbox-keyboard"):
                 self.onboard_kb = subprocess.Popen(["matchbox-keyboard", "--xid"],
                                                    stdin=subprocess.PIPE,
                                                    stdout=subprocess.PIPE,
                                                    close_fds=True)
-                print (_("**** GMOCCAPY INFO ****"))
-                print (_("**** virtual keyboard program found : <matchbox-keyboard>"))
+                print((_("**** GMOCCAPY INFO ****")))
+                print((_("**** virtual keyboard program found : <matchbox-keyboard>")))
             else:
-                print (_("**** GMOCCAPY INFO ****"))
-                print (_("**** No virtual keyboard installed, we checked for <onboard> and <matchbox-keyboard>."))
+                print((_("**** GMOCCAPY INFO ****")))
+                print((_("**** No virtual keyboard installed, we checked for <onboard> and <matchbox-keyboard>.")))
                 self._no_virt_keyboard()
                 return
             sid = self.onboard_kb.stdout.readline()
             socket = gtk.Socket()
             self.widgets.key_box.add(socket)
-            socket.add_id(long(sid))
+            socket.add_id(int(sid))
             socket.show()
             self.onboard = True
-        except Exception, e:
-            print (_("**** GMOCCAPY ERROR ****"))
-            print (_("**** Error with launching virtual keyboard,"))
-            print (_("**** is onboard or matchbox-keyboard installed? ****"))
+        except Exception as e:
+            print((_("**** GMOCCAPY ERROR ****")))
+            print((_("**** Error with launching virtual keyboard,")))
+            print((_("**** is onboard or matchbox-keyboard installed? ****")))
             traceback.print_exc()
             self._no_virt_keyboard()
 
@@ -1460,7 +1460,7 @@ class gmoccapy(object):
                 pin = hal_glib.GPin(
                     self.halcomp.newpin("messages." + message[2] + "-response", hal.HAL_BIT, hal.HAL_OUT))
             else:
-                print(_("**** GMOCCAPY ERROR **** /n Message type {0} not supported").format(message[1]))
+                print((_("**** GMOCCAPY ERROR **** /n Message type {0} not supported").format(message[1])))
 
     def _show_user_message(self, pin, message):
         if message[1] == "status":
@@ -1484,7 +1484,7 @@ class gmoccapy(object):
             else:
                 self.halcomp["messages." + message[2] + "-waiting"] = 0
         else:
-            print(_("**** GMOCCAPY ERROR **** /n Message type {0} not supported").format(message[1]))
+            print((_("**** GMOCCAPY ERROR **** /n Message type {0} not supported").format(message[1])))
 
     def _show_offset_tab(self, state):
         page = self.widgets.ntb_preview.get_nth_page(1)
@@ -1555,7 +1555,7 @@ class gmoccapy(object):
         try:
             self.stat.poll()
         except:
-            raise SystemExit, "gmoccapy can not poll linuxcnc status any more"
+            raise SystemExit("gmoccapy can not poll linuxcnc status any more")
 
         error = self.error_channel.poll()
         if error:
@@ -1871,7 +1871,7 @@ class gmoccapy(object):
 
 
     def on_hal_status_mode_mdi(self, widget):
-        print ("MDI Mode", self.tool_change)
+        print(("MDI Mode", self.tool_change))
         # self.tool_change is set only if the tool change was commanded
         # from tooledit widget/page, so we do not want to switch the
         # screen layout to MDI, but set the manual widgets
@@ -2025,7 +2025,7 @@ class gmoccapy(object):
 
     # kill keyboard and estop machine before closing
     def on_window1_destroy(self, widget, data=None):
-        print "estoping / killing gmoccapy"
+        print("estoping / killing gmoccapy")
         if self.onboard:
             self._kill_keyboard()
         self.command.state(linuxcnc.STATE_OFF)
@@ -2042,7 +2042,7 @@ class gmoccapy(object):
             parameter = self.dialogs.entry_dialog(self, data=None, header=_("Enter value:"),
                                                   label=_("Set parameter {0} to:").format(code), integer=False)
             if parameter == "ERROR":
-                print(_("conversion error"))
+                print((_("conversion error")))
                 self.dialogs.warning_dialog(self, _("Conversion error !"),
                                             ("Please enter only numerical values\nValues have not been applied"))
                 return
@@ -2293,7 +2293,7 @@ class gmoccapy(object):
                 self.on_increment_changed(self.incr_rbt_list[rbt], self.jog_increments[rbt])
         else:
             print("This key has not been implemented yet")
-            print "Key {0} ({1:d}) was pressed".format(keyname, event.keyval), signal, self.last_key_event
+            print("Key {0} ({1:d}) was pressed".format(keyname, event.keyval), signal, self.last_key_event)
         self.last_key_event = keyname, signal
         return True
 
@@ -2357,8 +2357,8 @@ class gmoccapy(object):
             if item[1] == old_value:
                 new_tupple = (item[0], new_value)
                 item = new_tupple
-                print(_("**** GMOCCAPY INFO ****"))
-                print(_("**** replaced {0} to {1} ****").format(old_value, new_value))
+                print((_("**** GMOCCAPY INFO ****")))
+                print((_("**** replaced {0} to {1} ****").format(old_value, new_value)))
             self.h_tabs[int_tab].append(item)
 
     # check if macros are in the INI file and add them to MDI Button List
@@ -2405,18 +2405,18 @@ class gmoccapy(object):
     def show_try_errors(self):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         formatted_lines = traceback.format_exc().splitlines()
-        print(_("**** GMOCCAPY ERROR ****"))
-        print(_("**** {0} ****").format(formatted_lines[0]))
+        print((_("**** GMOCCAPY ERROR ****")))
+        print((_("**** {0} ****").format(formatted_lines[0])))
         traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
-        print (formatted_lines[-1])
+        print((formatted_lines[-1]))
 
     def _sensitize_widgets(self, widgetlist, value):
         for name in widgetlist:
             try:
                 self.widgets[name].set_sensitive(value)
-            except Exception, e:
-                print (_("**** GMOCCAPY ERROR ****"))
-                print _("**** No widget named: {0} to sensitize ****").format(name)
+            except Exception as e:
+                print((_("**** GMOCCAPY ERROR ****")))
+                print(_("**** No widget named: {0} to sensitize ****").format(name))
                 traceback.print_exc()
 
     def _update_active_gcodes(self):
@@ -2881,7 +2881,7 @@ class gmoccapy(object):
             if joint_or_axis in "01234567":
                 joint_btn = True
             else:
-                print ("unknown joint or axis {0}".format(joint_or_axis))
+                print(("unknown joint or axis {0}".format(joint_or_axis)))
                 return
 
         if not joint_btn:
@@ -2916,7 +2916,7 @@ class gmoccapy(object):
         else :
             JOGMODE = 0
         
-        if self.distance <> 0:  # incremental jogging
+        if self.distance != 0:  # incremental jogging
             self.command.jog(linuxcnc.JOG_INCREMENT, JOGMODE, joint_axis_number, direction * velocity, self.distance)
         else:  # continuous jogging
             self.command.jog(linuxcnc.JOG_CONTINUOUS, JOGMODE, joint_axis_number, direction * velocity)
@@ -2933,7 +2933,7 @@ class gmoccapy(object):
             if joint_axis in "01234567":
                 joint_btn = True
             else:
-                print ("unknown axis {0}".format(joint_axis))
+                print(("unknown axis {0}".format(joint_axis)))
                 return
 
         if not joint_btn:
@@ -2954,7 +2954,7 @@ class gmoccapy(object):
             JOGMODE = 0
 
         # Otherwise the movement would stop before the desired distance was moved
-        if self.distance <> 0:
+        if self.distance != 0:
             pass
         else:
             self.command.jog(linuxcnc.JOG_STOP, JOGMODE, joint_axis_number)
@@ -2973,7 +2973,7 @@ class gmoccapy(object):
 
     def on_ntb_main_switch_page(self, widget, page, page_num, data=None):
         if self.widgets.tbtn_setup.get_active():
-            if page_num != 1L:  # setup page is active,
+            if page_num != 1:  # setup page is active,
                 self.widgets.tbtn_setup.set_active(False)
 
     def on_tbtn_setup_toggled(self, widget, data=None):
@@ -3300,7 +3300,7 @@ class gmoccapy(object):
         elif command == "reverse":
             self.command.spindle(-1, rpm_out)
         else:
-            print(_("Something went wrong, we have an unknown spindle widget {0}").format(command))
+            print((_("Something went wrong, we have an unknown spindle widget {0}").format(command)))
 
     def _check_spindle_range(self):
         rpm = (self.stat.settings[2])
@@ -3559,7 +3559,7 @@ class gmoccapy(object):
         if offset == "CANCEL":
             return
         elif offset == "ERROR":
-            print(_("Conversion error in btn_set_value"))
+            print((_("Conversion error in btn_set_value")))
             self.dialogs.warning_dialog(self, _("Conversion error in btn_set_value!"),
                                    _("Please enter only numerical values. Values have not been applied"))
         else:
@@ -3912,7 +3912,7 @@ class gmoccapy(object):
             if result:
                 self.halcomp["toolchange-changed"] = True
             else:
-                print"toolchange abort", self.stat.tool_in_spindle, self.halcomp['toolchange-number']
+                print("toolchange abort", self.stat.tool_in_spindle, self.halcomp['toolchange-number'])
                 self.command.abort()
                 self.halcomp['toolchange-number'] = self.stat.tool_in_spindle
                 self.halcomp['toolchange-change'] = False
@@ -4418,7 +4418,7 @@ class gmoccapy(object):
         self.widgets.tbtn_setup.set_sensitive(pin.get())
 
     def _on_play_sound(self, widget, sound = None):
-        print(self,widget,sound)
+        print((self,widget,sound))
         if _AUDIO_AVAILABLE and sound:
             if sound == "error":
                 self.audio.set_sound(self.error_sound)
@@ -4535,10 +4535,10 @@ class gmoccapy(object):
             # only emit a signal if the button is sensitive, otherwise
             # running actions may be interrupted
             if not self.widgets[button].get_sensitive():
-                print("{0} not_sensitive".format(button))
+                print(("{0} not_sensitive".format(button)))
                 return
             self.widgets[button].emit("clicked")
-            print("Button {0} has been clicked".format(button))
+            print(("Button {0} has been clicked".format(button)))
         else:
             # as we are generating the macro buttons dynamically, we can"t use the same
             # method as above, here is how we do it
@@ -4548,7 +4548,7 @@ class gmoccapy(object):
                     button = self.macrobuttons[nr]  # This list is generated in add_macros_buttons(self)
                     # is the button sensitive?
                     if not button.get_sensitive():
-                        print("{0} not_sensitive".format(button))
+                        print(("{0} not_sensitive".format(button)))
                         return
                     button.emit("pressed")
                 else:
@@ -4571,7 +4571,7 @@ class gmoccapy(object):
             # only emit a signal if the button is sensitive, otherwise
             # running actions may be interrupted
             if self.widgets[button].get_sensitive() == False:
-                print("{0} not_sensitive".format(button))
+                print(("{0} not_sensitive".format(button)))
                 return
             button_pressed_list = ("rbt_manual", "rbt_mdi", "rbt_auto")
             button_toggled_list = ("tbtn_setup")
@@ -4583,7 +4583,7 @@ class gmoccapy(object):
             else:
                 self.widgets[button].emit("clicked")
         else:
-            print("No button found in v_tabs from {0}".format(pin.name))
+            print(("No button found in v_tabs from {0}".format(pin.name)))
 
 # We need extra HAL pins here is where we do it.
 # we make pins for the hardware buttons witch can be placed around the
@@ -4719,9 +4719,9 @@ if __name__ == "__main__":
     app = gmoccapy(sys.argv)
 
     inifile = sys.argv[2]
-    print ("**** GMOCCAPY INFO : inifile = {0} ****:".format(sys.argv[2]))
+    print(("**** GMOCCAPY INFO : inifile = {0} ****:".format(sys.argv[2])))
     postgui_halfile = app.get_ini_info.get_postgui_halfile()
-    print ("**** GMOCCAPY INFO : postgui halfile = {0} ****:".format(postgui_halfile))
+    print(("**** GMOCCAPY INFO : postgui halfile = {0} ****:".format(postgui_halfile)))
 
     if postgui_halfile:
         if postgui_halfile.lower().endswith('.tcl'):
@@ -4729,7 +4729,7 @@ if __name__ == "__main__":
         else:
             res = os.spawnvp(os.P_WAIT, "halcmd", ["halcmd", "-i", inifile, "-f", postgui_halfile])
         if res:
-            raise SystemExit, res
+            raise SystemExit(res)
 
     gtk.main()
 
