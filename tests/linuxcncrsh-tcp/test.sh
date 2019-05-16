@@ -9,7 +9,7 @@ linuxcnc -r linuxcncrsh-test.ini &
 TOGO=80
 while [  $TOGO -gt 0 ]; do
     echo trying to connect to linuxcncrsh TOGO=$TOGO
-    if nc -z localhost 5007; then
+    if nc  localhost 5007  --send-only </dev/null ; then
         break
     fi
     sleep 0.25

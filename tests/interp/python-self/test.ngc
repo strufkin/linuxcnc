@@ -2,6 +2,7 @@
 ;py,import interpreter
 
 ; pass value to Python and store in a self.attribute
+
 o<retainparam1> call [25.0]
 
 ; now check it's still there
@@ -11,5 +12,6 @@ o<checkparam1_retained> call
 ; the same value must show up here too:
 
 ;py,assert interpreter.this.param1 == 25.0
+
 M2
 

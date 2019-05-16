@@ -12,17 +12,20 @@ timeout = 5.0
 
 
 # unbuffer stdout
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+#sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
+import functools
+
+print = functools.partial(print, flush =True)
 
 def wait_for_pin_value(pin_name, value, timeout=5.0):
     start_time = time.time()
     while (time.time() - start_time) < timeout:
         time.sleep(0.1)
         if h[pin_name] == value:
-            print "pin '%s' reached target value '%s' after %f seconds" % (pin_name, value, time.time() - start_time)
+            print ("pin '%s' reached target value '%s' after %f seconds" % (pin_name, value, time.time() - start_time))
             return
-    print "Error: pin '%s' didn't reach value '%s' within timeout of %f seconds (it's %s instead)" % (pin_name, value, timeout, h[pin_name])
+    print( "Error: pin '%s' didn't reach value '%s' within timeout of %f seconds (it's %s instead)" % (pin_name, value, timeout, h[pin_name]))
     sys.exit(1)
 
 
@@ -30,7 +33,7 @@ f = open('expected-startup-tool-number', 'r')
 contents = f.read()
 f.close()
 expected_startup_tool_number = int(contents)
-print "expecting tool number %d" % expected_startup_tool_number
+print( "expecting tool number %d" % expected_startup_tool_number)
 
 #
 # set up pins

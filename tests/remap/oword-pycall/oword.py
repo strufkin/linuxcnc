@@ -30,10 +30,11 @@ def square(self,x):
 # o<multiply> [5] [7] [9] [16]
 # (debug, #<_value>)
 
+from functools import reduce
 import operator
 
 # you'd be better of doing it this way:
 def multiply(self, *args):
-    print "multiply: number of arguments=", len(args)
+    print ( "multiply: number of arguments=", len(args))
     return reduce(operator.mul, args)
 
