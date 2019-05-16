@@ -16,22 +16,26 @@
 
 import os, time, string
 
-import gobject, gtk
+import gi
+from gi.repository import Gtk, GObject
 
-from hal_widgets import _HalWidgetBase
+
+#mport gobject, gtk
+
+from .hal_widgets import _HalWidgetBase
 import linuxcnc
 from hal_glib import GStat
-from hal_actions import _EMC_ActionBase, ensure_mode
+from .hal_actions import _EMC_ActionBase, ensure_mode
 # path to TCL for external programs eg. halshow
 try:
     TCLPATH = os.environ['LINUXCNC_TCL_DIR']
 except:
     pass
 
-class EMC_MDIHistory(gtk.VBox, _EMC_ActionBase):
+class EMC_MDIHistory(Gtk.VBox, _EMC_ActionBase):
     __gtype_name__ = 'EMC_MDIHistory'
     def __init__(self, *a, **kw):
-        gtk.VBox.__init__(self, *a, **kw)
+        Gtk.VBox.__init__(self, *a, **kw)
         self.gstat = GStat()
         # if 'NO_FORCE_HOMING' is true, MDI  commands are allowed before homing.
         inifile = os.environ.get('INI_FILE_NAME', '/dev/null')
@@ -40,14 +44,14 @@ class EMC_MDIHistory(gtk.VBox, _EMC_ActionBase):
         path = self.ini.find('DISPLAY', 'MDI_HISTORY_FILE') or '~/.axis_mdi_history'
         self.filename = os.path.expanduser(path)
 
-        self.model = gtk.ListStore(str)
+        self.model = Gtk.ListStore(str)
 
-        self.tv = gtk.TreeView()
+        self.tv = Gtk.TreeView()
         self.tv.set_model(self.model)
-        self.cell = gtk.CellRendererText()
+        self.cell = Gtk.CellRendererText()
 
-        self.col = gtk.TreeViewColumn("Command")
-        self.col.pack_start(self.cell, True)
+        self.col = Gtk.TreeViewColumn("Command")
+        self.col.pack_start(self.cell, expand = True)
         self.col.add_attribute(self.cell, 'text', 0)
 
         self.tv.append_column(self.col)
@@ -55,13 +59,13 @@ class EMC_MDIHistory(gtk.VBox, _EMC_ActionBase):
         self.tv.set_reorderable(False)
         self.tv.set_headers_visible(True)
 
-        scroll = gtk.ScrolledWindow()
+        scroll = Gtk.ScrolledWindow()
         scroll.add(self.tv)
-        scroll.props.hscrollbar_policy = gtk.POLICY_AUTOMATIC
-        scroll.props.vscrollbar_policy = gtk.POLICY_AUTOMATIC
+        scroll.props.hscrollbar_policy = Gtk.PolicyType.AUTOMATIC
+        scroll.props.vscrollbar_policy = Gtk.PolicyType.AUTOMATIC
 
-        self.entry = gtk.Entry()
-        self.entry.set_icon_from_stock(gtk.ENTRY_ICON_SECONDARY, 'gtk-ok')
+        self.entry = Gtk.Entry()
+        self.entry.set_icon_from_stock(Gtk.EntryIconPosition.SECONDARY, 'gtk-ok')
 
         self.entry.connect('activate', self.submit)
         self.entry.connect('icon-press', self.submit)
@@ -69,8 +73,8 @@ class EMC_MDIHistory(gtk.VBox, _EMC_ActionBase):
         self.tv.connect('key_press_event', self.on_key_press_event)
         self.tv.connect('button_press_event', self.on_button_press_event)
 
-        self.pack_start(scroll, True)
-        self.pack_start(self.entry, False)
+        self.pack_start(scroll, expand = True, fill=True, padding=0)
+        self.pack_start(self.entry, expand = False, fill=True, padding=0)
         self.gstat.connect('state-off', lambda w: self.set_sensitive(False))
         self.gstat.connect('state-estop', lambda w: self.set_sensitive(False))
         self.gstat.connect('interp-idle', lambda w: self.set_sensitive(self.machine_on()))
@@ -83,17 +87,20 @@ class EMC_MDIHistory(gtk.VBox, _EMC_ActionBase):
 
     def reload(self):
         self.model.clear()
-
+        print("filename reload[{}]".format(self.filename))
         try:
             fp = open(self.filename)
         except:
             return
-        lines = map(str.strip, fp.readlines())
+        lines = list(map(str.strip, fp.readlines()))
         fp.close()
-
-        lines = filter(bool, lines)
+        print("mpalines",lines)
+        lines = list(filter(bool, lines))
+        print("lines{}",lines)
+        print(dir(lines))
         for l in lines:
             self.model.append((l,))
+        print("len(lines-1):",len(lines)-1)
         path = (len(lines)-1,)
         self.tv.scroll_to_cell(path)
         self.tv.set_cursor(path)
@@ -136,7 +143,7 @@ class EMC_MDIHistory(gtk.VBox, _EMC_ActionBase):
         idx = w.get_cursor()[0]
         if idx is None:
             return True
-        if gtk.gdk.keyval_name(event.keyval) == 'Return':
+        if Gdk.keyval_name(event.keyval) == 'Return':
             self.entry.set_text(self.model[idx][0])
             self.entry.grab_focus()
             return True

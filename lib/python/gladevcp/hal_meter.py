@@ -13,13 +13,16 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-import gtk
-import gobject
+
+import gi
+from gi.repository import Gtk,GObject,Gdk
+#import gtk
+#import GObject
 import cairo
 import math
-import gtk.glade
+#import gtk.glade
 
-from hal_widgets import _HalWidgetBase, hal, hal_pin_changed_signal
+from .hal_widgets import _HalWidgetBase, hal, hal_pin_changed_signal
 
 MAX_INT = 0x7fffffff
 
@@ -28,57 +31,63 @@ def gdk_color_tuple(c):
         return 0, 0, 0
     return c.red_float, c.green_float, c.blue_float
 
-class HAL_Meter(gtk.DrawingArea, _HalWidgetBase):
+def parse_color(self, color):
+        c = Gdk.RGBA()
+        c.parse(color)
+        return c.to_color()
+
+
+class HAL_Meter(Gtk.DrawingArea, _HalWidgetBase):
     __gtype_name__ = 'HAL_Meter'
     __gsignals__ = dict([hal_pin_changed_signal])
     __gproperties__ = {
-        'invert' : ( gobject.TYPE_BOOLEAN, 'Inverted', 'Invert min-max direction',
-                    False, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'min' : ( gobject.TYPE_FLOAT, 'Min', 'Minimum value',
-                    -MAX_INT, MAX_INT, 0, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'max'  : ( gobject.TYPE_FLOAT, 'Max', 'Maximum value',
-                    -MAX_INT, MAX_INT, 100, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'value' : ( gobject.TYPE_FLOAT, 'Value', 'Current meter value (for glade testing)',
-                    -MAX_INT, MAX_INT, 0, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'majorscale' : ( gobject.TYPE_FLOAT, 'Major scale', 'Major ticks',
-                    -MAX_INT, MAX_INT, 10, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'minorscale'  : ( gobject.TYPE_FLOAT, 'Minor scale', 'Minor ticks',
-                    -MAX_INT, MAX_INT, 2, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'z0_color' : ( gtk.gdk.Color.__gtype__, 'Zone 0 color', "Set color for first zone",
-                        gobject.PARAM_READWRITE),
-        'z1_color' : ( gtk.gdk.Color.__gtype__, 'Zone 1 color', "Set color for second zone",
-                        gobject.PARAM_READWRITE),
-        'z2_color' : ( gtk.gdk.Color.__gtype__, 'Zone 2 color', "Set color for third zone",
-                        gobject.PARAM_READWRITE),
-        'z0_border' : ( gobject.TYPE_FLOAT, 'Zone 0 up limit', 'Up limit of zone 0',
-                    -MAX_INT, MAX_INT, MAX_INT, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'z1_border' : ( gobject.TYPE_FLOAT, 'Zone 1 up limit', 'Up limit of zone 1',
-                    -MAX_INT, MAX_INT, MAX_INT, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'bg_color' : ( gtk.gdk.Color.__gtype__, 'Background', "Choose background color",
-                        gobject.PARAM_READWRITE),
-        'force_size' : ( gobject.TYPE_INT, 'Forced size', 'Force meter size not dependent on widget size. -1 to disable',
-                    -1, MAX_INT, -1, gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'text_template' : ( gobject.TYPE_STRING, 'Text template',
+        'invert' : ( GObject.TYPE_BOOLEAN, 'Inverted', 'Invert min-max direction',
+                    False, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'min' : ( GObject.TYPE_FLOAT, 'Min', 'Minimum value',
+                    -MAX_INT, MAX_INT, 0, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'max'  : ( GObject.TYPE_FLOAT, 'Max', 'Maximum value',
+                    -MAX_INT, MAX_INT, 100, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'value' : ( GObject.TYPE_FLOAT, 'Value', 'Current meter value (for glade testing)',
+                    -MAX_INT, MAX_INT, 0, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'majorscale' : ( GObject.TYPE_FLOAT, 'Major scale', 'Major ticks',
+                    -MAX_INT, MAX_INT, 10, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'minorscale'  : ( GObject.TYPE_FLOAT, 'Minor scale', 'Minor ticks',
+                    -MAX_INT, MAX_INT, 2, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'z0_color' : ( Gdk.Color.__gtype__, 'Zone 0 color', "Set color for first zone",
+                        GObject.PARAM_READWRITE),
+        'z1_color' : ( Gdk.Color.__gtype__, 'Zone 1 color', "Set color for second zone",
+                        GObject.PARAM_READWRITE),
+        'z2_color' : ( Gdk.Color.__gtype__, 'Zone 2 color', "Set color for third zone",
+                        GObject.PARAM_READWRITE),
+        'z0_border' : ( GObject.TYPE_FLOAT, 'Zone 0 up limit', 'Up limit of zone 0',
+                    -MAX_INT, MAX_INT, MAX_INT, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'z1_border' : ( GObject.TYPE_FLOAT, 'Zone 1 up limit', 'Up limit of zone 1',
+                    -MAX_INT, MAX_INT, MAX_INT, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'bg_color' : ( Gdk.Color.__gtype__, 'Background', "Choose background color",
+                        GObject.PARAM_READWRITE),
+        'force_size' : ( GObject.TYPE_INT, 'Forced size', 'Force meter size not dependent on widget size. -1 to disable',
+                    -1, MAX_INT, -1, GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+        'text_template' : ( GObject.TYPE_STRING, 'Text template',
                 'Text template to display. Python formatting may be used for one variable',
-                "%s", gobject.PARAM_READWRITE|gobject.PARAM_CONSTRUCT),
-        'label' : ( gobject.TYPE_STRING, 'Meter label', 'Label to display',
-                "", gobject.PARAM_READWRITE|gobject.PARAM_CONSTRUCT),
-        'sublabel' : ( gobject.TYPE_STRING, 'Meter sub label', 'Sub text to display',
-                "", gobject.PARAM_READWRITE|gobject.PARAM_CONSTRUCT),
+                "%s", GObject.PARAM_READWRITE|GObject.PARAM_CONSTRUCT),
+        'label' : ( GObject.TYPE_STRING, 'Meter label', 'Label to display',
+                "", GObject.PARAM_READWRITE|GObject.PARAM_CONSTRUCT),
+        'sublabel' : ( GObject.TYPE_STRING, 'Meter sub label', 'Sub text to display',
+                "", GObject.PARAM_READWRITE|GObject.PARAM_CONSTRUCT),
     }
     __gproperties = __gproperties__
 
     def __init__(self):
         super(HAL_Meter, self).__init__()
 
-        self.bg_color = gtk.gdk.Color('white')
-        self.z0_color = gtk.gdk.Color('green')
-        self.z1_color = gtk.gdk.Color('yellow')
-        self.z2_color = gtk.gdk.Color('red')
+        self.bg_color = Gdk.color_parse('white')
+        self.z0_color = Gdk.color_parse('green')
+        self.z1_color = Gdk.color_parse('yellow')
+        self.z2_color = Gdk.color_parse('red')
 
         self.force_radius = None
 
-        self.connect("expose-event", self.expose)
+        self.connect("draw", self.expose)
 
     def _hal_init(self):
         _HalWidgetBase._hal_init(self)
@@ -87,13 +96,17 @@ class HAL_Meter(gtk.DrawingArea, _HalWidgetBase):
         self.hal_pin.connect('value-changed', lambda s: self.emit('hal-pin-changed', s))
 
     def expose(self, widget, event):
-        if self.flags() & gtk.PARENT_SENSITIVE:
+        if widget.is_sensitive():
+        #if self.flags() & gtk.PARENT_SENSITIVE:
             alpha = 1
         else:
             alpha = 0.3
 
-        w = self.allocation.width
-        h = self.allocation.height
+        #w = self.allocation.width
+        #h = self.allocation.height
+        w= self.get_allocated_width()
+        h= self.get_allocated_width()
+
         r = min(w, h) / 2
 
         fr = self.force_size
@@ -161,10 +174,10 @@ class HAL_Meter(gtk.DrawingArea, _HalWidgetBase):
         cr.set_font_size(r/5)
         self.text_at(cr, self.label, 0, -r/5)
 
-        set_color(gtk.gdk.Color('red'))
+        set_color(parse_color('red'))
         self.draw_arrow(cr, r, angle(self.value))
 
-        set_color(gtk.gdk.Color('black'))
+        set_color(parse_color('black'))
         self.text_at(cr, self.text_template % self.value, 0, 0.8 * r)
         return True
 
@@ -226,8 +239,8 @@ class HAL_Meter(gtk.DrawingArea, _HalWidgetBase):
         if name == 'text_template':
             try:
                 v = value % 0.0
-            except Exception, e:
-                print "Invalid format string '%s': %s" % (value, e)
+            except Exception as e:
+                print ( "Invalid format string '{}': {}".format (value, e))
                 return False
         if name in ['bg_color', 'z0_color', 'z1_color', 'z2_color']:
             if not value:

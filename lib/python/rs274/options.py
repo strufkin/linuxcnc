@@ -141,7 +141,7 @@ option add *Togl.backplotprobing_alpha .75 startupFile
 option add *Togl.selected #00ffff startupFile
 
 option add *Togl.overlay_foreground #ffffff startupFile
-option add *Togl.overlay_alpha .75 startupFile
+option add *Togl.overlay_alpha .1 startupFile
 option add *Togl.overlay_background #000000 startupFile
 
 option add *Togl.label_limit #ff353a startupFile
@@ -164,7 +164,7 @@ option add *Togl.lathetool #cccccc startupFile
 option add *Togl.lathetool_alpha .1 startupFile
 '''
 
-import commands, sys
+import subprocess, sys
 
 def install(root = None):
     if root is None: root = Tkinter._default_root

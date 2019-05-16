@@ -56,19 +56,22 @@ Optional button LABELS (case insensitive):
 import linuxcnc
 import sys
 import os
-import pango
+
+#import pango
 
 g_ui_dir = linuxcnc.SHARE + "/linuxcnc"
 
-try:
-    import pygtk
-    pygtk.require('2.0')
-except:
-    pass
+#try:
+#    #import pygtk
+#    #pygtk.require('2.0')
+#except:
+#    pass
 
 try:
-    import gtk
-except ImportError,msg:
+    import gi
+    from gi.repository import Gtk, GObject, Pango, Gdk
+    #import gtk
+except ImportError as msg:
     print('GTK not available: %s' % msg)
     sys.exit(1)
 
@@ -89,16 +92,16 @@ class PopupKeyboard:
         fontname ='sans 12 bold'
         self.use_coord_buttons = use_coord_buttons
 
-        try:
-            import gtk.glade
-        except ImportError,detail:
-            print 'ImportError:',detail
-        except Exception,msg:
-            print 'Exception:',Exception
-            print sys.exc_info()
-            sys.exit(1)
+        #try:
+        #    import gtk.glade
+        #except ImportError,detail:
+        #    print 'ImportError:',detail
+        #except Exception,msg:
+        #    print 'Exception:',Exception
+        #    print sys.exc_info()
+        #    sys.exit(1)
 
-        self.builder = gtk.Builder()
+        self.builder = Gtk.Builder()
         self.builder.add_from_file(glade_file)
         self.builder.connect_signals(self)
 
@@ -131,21 +134,24 @@ class PopupKeyboard:
         # and show iff corresponding axis is in axis_mask
         self.label_to_btn = {}
         for btn in self.builder.get_objects():
-            if type(btn) is not gtk.Button:
+            if type(btn) is not Gtk.Button:
                 continue
             self.label_to_btn[btn.get_label().upper()] = btn
 
-            if isinstance(btn.child, gtk.Label):
-                lbl = btn.child
-                lbl.modify_font(pango.FontDescription(fontname))
+            if isinstance(btn.get_child(), Gtk.Label):
+                lbl = btn.get_child()
+                lbl.modify_font(Pango.FontDescription(fontname))
 
         if use_coord_buttons: self.support_coord_buttons()
 
         # making it insensitive clears the initial selection region
-        self.num_entry.set_state(gtk.STATE_INSENSITIVE)
-        self.num_entry.modify_text(gtk.STATE_INSENSITIVE
-                      ,gtk.gdk.color_parse('black'))
-        self.num_entry.modify_font(pango.FontDescription(fontname))
+        self.num_entry.set_state(Gtk.StateType.INSENSITIVE)
+        c = Gdk.RGBA()
+        c.parse("black")
+        
+        self.num_entry.modify_text(Gtk.StateType.INSENSITIVE
+                      ,c.to_color())
+        self.num_entry.modify_font(Pango.FontDescription(fontname))
 
     def support_coord_buttons(self):
         try:
@@ -168,34 +174,45 @@ class PopupKeyboard:
                 bdiam.show()
             elif bdiam:
                 bdiam.hide()
-        except linuxcnc.error,msg:
+        except linuxcnc.error as msg:
             self.stat = None
             if self.coord_buttons is not None:
                 self.coord_buttons.hide()
-                print "linuxcnc must be running to use coordinate keys"
+                print( "linuxcnc must be running to use coordinate keys")
             # continue without buttons for testing when linuxnc not running
-        except Exception, err:
-            print 'Exception:',Exception
-            print sys.exc_info()
+        except Exception as err:
+            print ('Exception:',Exception)
+            print (sys.exc_info())
             sys.exit(1)
 
 
     def set_theme(self,tname=None):
-        if tname is None:
-            return
-        screen   = self.dialog.get_screen()
-        settings = gtk.settings_get_for_screen(screen)
-        settings.set_string_property('gtk-theme-name',tname,"")
-        theme    = settings.get_property('gtk-theme-name')
+        settings = Gtk.Settings.get_default()
+        #settings.set_property("gtk-theme-name", "Numix")
+        settings.set_property("gtk-application-prefer-dark-theme", False)  # if you want use dark theme, set second arg to True
+
+        #screen   = w.get_screen()
+        #settings = gtk.settings_get_for_screen(screen)
+        if (tname is None) or (tname == "") or (tname == "Follow System Theme"):
+            tname = settings.get_property("gtk-theme-name")
+        settings.set_property('gtk-theme-name',tname)
+        
+        #if tname is None:
+        #    return
+        #screen   = self.dialog.get_screen()
+        #settings = gtk.settings_get_for_screen(screen)
+        #settings.set_string_property('gtk-theme-name',tname,"")
+        #theme    = settings.get_property('gtk-theme-name')
 
     def on_response(self,widget,response):
         if response < 0:
             widget.emit_stop_by_name('response')
         return True
 
-    def on_delete(self,widget,event): return True
+    def on_delete(self,event): return True
 
-    def on_close(self,widget,event): return True
+    def on_close(self,event): return True
+    #def on_close(self,widget,event): return True
 
     def run(self,initial_value='',title=None):
         if title is not None:
@@ -228,7 +245,7 @@ class PopupKeyboard:
         return self.do_unknown_label
 
     def do_unknown_label(self,e,l):
-        print 'PopupKeyboard:do_unknown_label: <%s>' % l
+        print( 'PopupKeyboard:do_unknown_label: <%s>' % l)
 
     def do_number(self,e,l):
         # not needed if INSENSITIVE:
@@ -266,7 +283,7 @@ class PopupKeyboard:
             self.stat.poll()
             e.set_text("%.6g" % self.coord_value(l))
         else:
-            print "linuxcnc must be running to use <%s> key" % l
+            print( "linuxcnc must be running to use <%s> key" % l)
 
     def get_result(self):
         return(self.result)
@@ -294,16 +311,16 @@ class PopupKeyboard:
 
 if __name__ == "__main__":
     m = PopupKeyboard()
-    print "\nClear and Save to end test\n"
+    print( "\nClear and Save to end test\n")
     ct = 100
     while True:
         m.run(initial_value=''
              ,title=str(ct)
              )
         result = m.get_result()
-        print 'result = <%s>' % result
+        print( 'result = <%s>' % result)
         if result=='':
             sys.exit(0)
         ct += 1
-    gtk.main()
+    Gtk.main()
 # vim: sts=4 sw=4 et

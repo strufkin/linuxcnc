@@ -4,7 +4,9 @@
 XEmbed helper functions to allow correct embeding inside Axis
 """
 
-import gtk
+#import gtk
+import gi
+from gi.repository import Gtk, Gdk
 
 def reparent(window, parent):
     """ Forced reparent. When reparenting Gtk applications into Tk
@@ -16,11 +18,16 @@ def reparent(window, parent):
     if not parent:
         return window
 
-    plug = gtk.Plug(long(parent))
+    plug = Gtk.Plug.new(parent)
     plug.show()
+    print(plug.get_property('window').get_xid())
+    print(dir(plug.get_property('window')))
+    print(dir(plug))
+    #print(dir(plug.window))
 
     d = display.Display()
-    w = drawable.Window(d.display, plug.window.xid, 0)
+    # w = drawable.Window(d.display, plug.window.xid, 0)
+    w = drawable.Window(d.display, plug.get_property('window').get_xid(), 0)
     # Honor XEmbed spec
     atom = d.get_atom('_XEMBED_INFO')
     w.change_property(atom, atom, 32, [0, 1])
@@ -45,6 +52,8 @@ def keyboard_forward(window, forward):
         all others and listen for key-presss and key-release events. If key is not
         in ignore list - forward it to window id found in evironment.
     """
+    print(forward)
+    print(dir(forward))
     if not forward:
         return
     try:
@@ -59,19 +68,21 @@ def keyboard_forward(window, forward):
     d = display.Display()
     fw = drawable.Window(d.display, forward, 0)
 
-    ks = gtk.keysyms
-    ignore = [ ks.Tab, ks.Page_Up, ks.Page_Down
-             , ks.KP_Page_Up, ks.KP_Page_Down
-             , ks.Left, ks.Right, ks.Up, ks.Down
-             , ks.KP_Left, ks.KP_Right, ks.KP_Up, ks.KP_Down
-             , ks.bracketleft, ks.bracketright
-             ]
+    #ks = Gtk.keysyms
+    #ignore = [ ks.Tab, ks.Page_Up, ks.Page_Down
+    #         , ks.KP_Page_Up, ks.KP_Page_Down
+    #         , ks.Left, ks.Right, ks.Up, ks.Down
+    #         , ks.KP_Left, ks.KP_Right, ks.KP_Up, ks.KP_Down
+    #         , ks.bracketleft, ks.bracketright
+    #         ]
+    ignore = [Gdk.KEY_Tab, Gdk.KEY_Page_Up, Gdk.KEY_Page_Down, Gdk.KEY_KP_Page_Up,Gdk.KEY_KP_Page_Down,Gdk.KEY_Left, Gdk.KEY_Left, Gdk.KEY_Up, Gdk.KEY_Down, \
+            Gdk.KEY_KP_Left, Gdk.KEY_KP_Right, Gdk.KEY_KP_Up, Gdk.KEY_KP_Down, Gdk.KEY_bracketleft, Gdk.KEY_bracketright]
 
     def gtk2xlib(e, fw, g, type=None):
         if type is None: type = e.type
-        if type == gtk.gdk.KEY_PRESS:
+        if type == Gdk.EventType.KEY_PRESS:
             klass = event.KeyPress
-        elif type == gtk.gdk.KEY_RELEASE:
+        elif type == Gdk.EventType.KEY_RELEASE:
             klass = event.KeyRelease
         else:
             return
@@ -94,5 +105,5 @@ def keyboard_forward(window, forward):
 
     window.connect_after("key-press-event", forward, fw)
     window.connect("key-release-event", forward, fw)
-    window.add_events(gtk.gdk.KEY_PRESS_MASK)
-    window.add_events(gtk.gdk.KEY_RELEASE_MASK)
+    window.add_events(Gdk.EventMask.KEY_PRESS_MASK)
+    window.add_events(Gdk.EventMask.KEY_RELEASE_MASK)

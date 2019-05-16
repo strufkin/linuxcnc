@@ -13,18 +13,25 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-import gobject
-import gtk
+
+import gi
+gi.require_version("Gtk","3.0")
+from gi.repository import GObject,Gtk
+
+#import gobject
+#import gtk
 
 import hal
 
-hal_pin_changed_signal = ('hal-pin-changed', (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, (gobject.TYPE_OBJECT,)))
+hal_pin_changed_signal = ('hal-pin-changed', (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, (GObject.TYPE_OBJECT,)))
 
 """ Set of base classes """
 class _HalWidgetBase:
     def hal_init(self, comp, name):
+        print("Init_start")
         self.hal, self.hal_name = comp, name
         self._hal_init()
+        print("initEnd")
 
     def _hal_init(self):
         """ Child HAL initialization functions """
@@ -117,15 +124,15 @@ class _HalSpeedControlBase(_HalWidgetBase):
         self.hal_pin.set(self.get_value())
 """ Real widgets """
 
-class HAL_HBox(gtk.HBox, _HalSensitiveBase):
+class HAL_HBox(Gtk.HBox, _HalSensitiveBase):
     __gtype_name__ = "HAL_HBox"
     __gsignals__ = dict([hal_pin_changed_signal])
 
-class HAL_Table(gtk.Table, _HalSensitiveBase):
+class HAL_Table(Gtk.Table, _HalSensitiveBase):
     __gtype_name__ = "HAL_Table"
     __gsignals__ = dict([hal_pin_changed_signal])
 
-class HAL_HideTable(gtk.Table, _HalWidgetBase):
+class HAL_HideTable(Gtk.Table, _HalWidgetBase):
     __gtype_name__ = "HAL_HideTable"
     __gsignals__ = dict([hal_pin_changed_signal])
 
@@ -140,12 +147,20 @@ class HAL_HideTable(gtk.Table, _HalWidgetBase):
         else:
             self.show()
 
-class HAL_ComboBox(gtk.ComboBox, _HalWidgetBase):
+class HAL_ComboBox(Gtk.ComboBox, _HalWidgetBase):
     __gtype_name__ = "HAL_ComboBox"
-    __gproperties__ = {
-        'column'  : ( gobject.TYPE_INT, 'Column', '-1:return value of index, other: column index of value in ListStore',
-                -1, 100, -1, gobject.PARAM_READWRITE|gobject.PARAM_CONSTRUCT),
-    }
+    #__gproperties__ = {
+    #    'column'  : ( int, 'Column', '-1:return value of index, other: column index of value in ListStore',
+    #            -1, 100, -1, GObject.ParamFlags.CONSTRUCT ),
+    #}
+    column = GObject.Property(type=GObject.TYPE_INT, nick = 'Column',
+            blurb = '-1:return value of index, other: column index of value in ListStore',
+            minimum = -1, maximum=100, default=-1,
+            flags=GObject.ParamFlags.READWRITE)
+ 
+
+    def __init__(self):
+        Gtk.ComboBox.__init__(self)
 
     def do_get_property(self, property):
         name = property.name.replace('-', '_')
@@ -165,7 +180,7 @@ class HAL_ComboBox(gtk.ComboBox, _HalWidgetBase):
         self.hal_pin_f = self.hal.newpin(self.hal_name+"-f", hal.HAL_FLOAT, hal.HAL_OUT)
         self.hal_pin_s = self.hal.newpin(self.hal_name+"-s", hal.HAL_S32, hal.HAL_OUT)
         self.connect("changed", self.hal_update)
-
+    
     def hal_update(self, *a):
         index = self.get_active()
         if self.column == -1: # just use index
@@ -175,8 +190,8 @@ class HAL_ComboBox(gtk.ComboBox, _HalWidgetBase):
             v = model[index][self.column]
         self.hal_pin_s.set(int(v))
         self.hal_pin_f.set(float(v))
-
-class HAL_Button(gtk.Button, _HalWidgetBase):
+    
+class HAL_Button(Gtk.Button, _HalWidgetBase):
     __gtype_name__ = "HAL_Button"
 
     def _hal_init(self):
@@ -187,7 +202,7 @@ class HAL_Button(gtk.Button, _HalWidgetBase):
         self.connect("released", _f, False)
         self.emit("released")
 
-class HALIO_Button(gtk.ToggleButton, _HalWidgetBase):
+class HALIO_Button(Gtk.ToggleButton, _HalWidgetBase):
     __gtype_name__ = "HALIO_Button"
 
     def _hal_init(self):
@@ -203,10 +218,10 @@ class HALIO_Button(gtk.ToggleButton, _HalWidgetBase):
         active = bool(self.hal_pin.get())
         self.set_active(active)
 
-class HAL_CheckButton(gtk.CheckButton, _HalToggleBase):
+class HAL_CheckButton(Gtk.CheckButton, _HalToggleBase):
     __gtype_name__ = "HAL_CheckButton"
 
-class HAL_SpinButton(gtk.SpinButton, _HalWidgetBase):
+class HAL_SpinButton(Gtk.SpinButton, _HalWidgetBase):
     __gtype_name__ = "HAL_SpinButton"
 
     def hal_update(self, *a):
@@ -220,65 +235,93 @@ class HAL_SpinButton(gtk.SpinButton, _HalWidgetBase):
         self.connect("value-changed", self.hal_update)
         self.emit("value-changed")
 
-class HAL_RadioButton(gtk.RadioButton, _HalToggleBase):
+class HAL_RadioButton(Gtk.RadioButton, _HalToggleBase):
     __gtype_name__ = "HAL_RadioButton"
 
-class HAL_ToggleButton(gtk.ToggleButton, _HalToggleBase):
+class HAL_ToggleButton(Gtk.ToggleButton, _HalToggleBase):
     __gtype_name__ = "HAL_ToggleButton"
 
-class HAL_HScale(gtk.HScale, _HalScaleBase):
+class HAL_HScale(Gtk.HScale, _HalScaleBase):
     __gtype_name__ = "HAL_HScale"
 
 
-class HALIO_HScale(gtk.HScale, _HalIOScaleBase):
+class HALIO_HScale(Gtk.HScale, _HalIOScaleBase):
     __gtype_name__ = "HALIO_HScale"
     __gsignals__ = dict([hal_pin_changed_signal])
 
-class HAL_VScale(gtk.VScale, _HalScaleBase):
+class HAL_VScale(Gtk.VScale, _HalScaleBase):
     __gtype_name__ = "HAL_VScale"
 
-class HAL_ProgressBar(gtk.ProgressBar, _HalWidgetBase):
+class HAL_ProgressBar(Gtk.ProgressBar, _HalWidgetBase):
     __gtype_name__ = "HAL_ProgressBar"
-    __gproperties__ = {
-        'scale' :    ( gobject.TYPE_FLOAT, 'Value Scale',
-                'Set maximum absolute value of input', -2**24, 2**24, 0,
-                gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'green_limit'  : ( gobject.TYPE_FLOAT, 'green zone limit',
-                'lower limit of green zone', 0, 1, 0,
-                gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'yellow_limit' : ( gobject.TYPE_FLOAT, 'yellow zone limit',
-                'lower limit of yellow zone', 0, 1, 0,
-                gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'red_limit' :    ( gobject.TYPE_FLOAT, 'red zone limit',
-                'lower limit of red zone', 0, 1, 0,
-                gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'text_template' : ( gobject.TYPE_STRING, 'text template',
-                'Text template to display. Python formatting may be used for dict {"value":value}',
-                "", gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-    }
-    __gproperties = __gproperties__
+    #__gproperties__ = {
+    #    'scale' :    ( GObject.TYPE_FLOAT, 'Value Scale',
+    #            'Set maximum absolute value of input', -2**24, 2**24, 0,
+    #            GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+    #    'green_limit'  : ( GObject.TYPE_FLOAT, 'green zone limit',
+    #            'lower limit of green zone', 0, 1, 0,
+    #            GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+    #    'yellow_limit' : ( GObject.TYPE_FLOAT, 'yellow zone limit',
+    #            'lower limit of yellow zone', 0, 1, 0,
+    #            GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+    #    'red_limit' :    ( GObject.TYPE_FLOAT, 'red zone limit',
+    #            'lower limit of red zone', 0, 1, 0,
+    #            GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+    #    'text_template' : ( GObject.TYPE_STRING, 'text template',
+    #            'Text template to display. Python formatting may be used for dict {"value":value}',
+    #            "", GObject.PARAM_READWRITE | GObject.PARAM_CONSTRUCT),
+    #}
+    #__gproperties = __gproperties__
+
+    scale = GObject.Property(type=GObject.TYPE_FLOAT, nick = 'Value Scale',
+            blurb = 'Set maximum absolute value of input',
+            minimum = -2**24, maximum=2**24, default=0,
+            flags=GObject.ParamFlags.READWRITE)
+
+    green_limit = GObject.Property(type=GObject.TYPE_FLOAT, nick='green zone limit',
+                    blurb='lower limit of green zone',
+                    minimum=0, maximum=1,default=0,
+                    flags=GObject.ParamFlags.READWRITE
+                )
+    yellow_limit =  GObject.Property(type=GObject.TYPE_FLOAT, nick='yellow zone limit',
+                    blurb='lower limit of yellow zone',
+                    minimum=0, maximum=1,default=0,
+                    flags=GObject.ParamFlags.READWRITE
+                )
+
+    red_limit =  GObject.Property(type=GObject.TYPE_FLOAT, nick='red zone limit',
+                    blurb='lower limit of red zone',
+                    minimum=0, maximum=1,default=0,
+                    flags=GObject.ParamFlags.READWRITE
+                )
+
+    text_template = GObject.Property(type=GObject.TYPE_STRING, nick='text template',
+                    blurb='Text template to display. Python formatting may be used for dict {"value":value}',
+                    default='',
+                    flags=GObject.ParamFlags.READWRITE
+                )
 
 
-    def do_get_property(self, property):
-        name = property.name.replace('-', '_')
-        if name in self.__gproperties.keys():
-            return getattr(self, name)
-        else:
-            raise AttributeError('unknown property %s' % property.name)
+    #def do_get_property(self, property):
+    #    name = property.name.replace('-', '_')
+    #    if name in self.__gproperties.keys():
+    #        return getattr(self, name)
+    #    else:
+    #         raise AttributeError('unknown property %s' % property.name)
 
-    def do_set_property(self, property, value):
-        name = property.name.replace('-', '_')
-        if name in self.__gproperties.keys():
-            return setattr(self, name, value)
-        else:
-            raise AttributeError('unknown property %s' % property.name)
+    #def do_set_property(self, property, value):
+    #    name = property.name.replace('-', '_')
+    #    if name in self.__gproperties.keys():
+    #        return setattr(self, name, value)
+    #    else:
+    #        raise AttributeError('unknown property %s' % property.name)
 
     def _hal_init(self):
         self.hal_pin = self.hal.newpin(self.hal_name, hal.HAL_FLOAT, hal.HAL_IN)
         self.hal_pin_scale = self.hal.newpin(self.hal_name+".scale", hal.HAL_FLOAT, hal.HAL_IN)
         if self.yellow_limit or self.red_limit:
             bar.set_fraction(0)
-            bar.modify_bg(gtk.STATE_PRELIGHT, gtk.gdk.Color('#0f0'))
+            bar.modify_bg(Gtk.StateFlags.PRELIGHT, Gdk.color_parse('#0f0'))
         if self.text_template:
             self.set_text(self.text_template % {'value':0})
 
@@ -316,32 +359,44 @@ class HAL_ProgressBar(gtk.ProgressBar, _HalWidgetBase):
                 break
 
         if color:
-            self.modify_bg(gtk.STATE_PRELIGHT, gtk.gdk.color_parse(color))
+            self.modify_bg(Gtk.StateFlags.PRELIGHT, Gdk.color_parse(color))
 
-class HAL_Label(gtk.Label, _HalWidgetBase):
+class HAL_Label(Gtk.Label, _HalWidgetBase):
     __gtype_name__ = "HAL_Label"
     __gsignals__ = dict([hal_pin_changed_signal])
-    __gproperties__ = {
-        'label_pin_type'  : ( gobject.TYPE_INT, 'HAL pin type', '0:S32 1:Float 2:U32',
-                0, 2, 0, gobject.PARAM_READWRITE|gobject.PARAM_CONSTRUCT),
-        'text_template' : ( gobject.TYPE_STRING, 'text template',
-                'Text template to display. Python formatting may be used for one variable',
-                "%s", gobject.PARAM_READWRITE|gobject.PARAM_CONSTRUCT),
-    }
+    # __gproperties__ = {
+    #    'label_pin_type'  : ( GObject.TYPE_INT, 'HAL pin type', '0:S32 1:Float 2:U32',
+    # #           0, 2, 0, GObject.PARAM_READWRITE|GObject.PARAM_CONSTRUCT),
+    #    'text_template' : ( GObject.TYPE_STRING, 'text template',
+    #            'Text template to display. Python formatting may be used for one variable',
+    #            "%s", GObject.PARAM_READWRITE|GObject.PARAM_CONSTRUCT),
+    #}
 
-    def do_get_property(self, property):
-        name = property.name.replace('-', '_')
-        if name in ['label_pin_type', 'text_template']:
-            return getattr(self, name)
-        else:
-            raise AttributeError('unknown property %s' % property.name)
+    label_pin_type = GObject.Property(type=GObject.TYPE_INT,
+            maximum=2,minimum=0,default=0,nick='HAL pin type',
+            blurb='0:S32 1:Float 2:U32',
+            flags=GObject.ParamFlags.READWRITE)
 
-    def do_set_property(self, property, value):
-        name = property.name.replace('-', '_')
-        if name in ['label_pin_type', 'text_template']:
-            return setattr(self, name, value)
-        else:
-            raise AttributeError('unknown property %s' % property.name)
+    text_template = GObject.Property(type=GObject.TYPE_STRING,
+                        nick='text template',
+                        blurb='Text template to display. Python formatting may be used for one variable',
+                        default='%s',
+                        flags=GObject.ParamFlags.READWRITE
+                    )
+
+    #def do_get_property(self, property):
+    #    name = property.name.replace('-', '_')
+    #    if name in ['label_pin_type', 'text_template']:
+    #        return getattr(self, name)
+    #    else:
+    #        raise AttributeError('unknown property %s' % property.name)
+
+    #def do_set_property(self, property, value):
+    #    name = property.name.replace('-', '_')
+    #    if name in ['label_pin_type', 'text_template']:
+    #        return setattr(self, name, value)
+    #    else:
+    #        raise AttributeError('unknown property %s' % property.name)
 
 
     def _hal_init(self):
@@ -356,3 +411,4 @@ class HAL_Label(gtk.Label, _HalWidgetBase):
         self.hal_pin.connect('value-changed',
                             lambda p: self.set_text(self.text_template % p.value))
         self.hal_pin.connect('value-changed', lambda s: self.emit('hal-pin-changed', s))
+

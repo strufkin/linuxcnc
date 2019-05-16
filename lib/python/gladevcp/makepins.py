@@ -17,14 +17,16 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 import sys
-import gtk
+#import gtk
 import hal
-import gtk.glade
-import gobject
+import gi
+from gi.repository import Gtk,GObject
+#import gtk.glade
+#import gobject
 import getopt
 
-from hal_widgets import _HalWidgetBase
-from led import HAL_LED
+from .hal_widgets import _HalWidgetBase
+from .led import HAL_LED
 from hal_glib import GComponent
 
 from gladevcp.gladebuilder import widget_name
@@ -32,11 +34,12 @@ from gladevcp.gladebuilder import widget_name
 class GladePanel():
     def on_window_destroy(self, widget, data=None):
         self.hal.exit()
-        gobject.source_remove(self.timer)
-        gtk.main_quit()
+        GObject.source_remove(self.timer)
+        Gtk.main_quit()
 
     def __init__(self,halcomp,xmlname,builder,buildertype):
-        
+
+        print(halcomp,xmlname,builder,buildertype)        
         self.builder = builder
         self.hal = GComponent(halcomp)
         self.widgets = {}
@@ -48,10 +51,11 @@ class GladePanel():
                 continue
 
             if isinstance(widget, _HalWidgetBase):
+                print("instance of [{}]".format(widget))
                 widget.hal_init(self.hal, idname)
                 self.widgets[idname] = widget
 
-        self.timer = gobject.timeout_add(100, self.update)                  
+        self.timer = GObject.timeout_add(100, self.update)                  
         
 
     def update(self):
@@ -64,8 +68,8 @@ class GladePanel():
         self.widgets[item] = value
     
 if __name__ == "__main__":
-    print "Gladevcp_make_pins cannot be run on its own"
-    print "It must be called by gladevcp or a python program"
-    print "that loads and displays the glade panel and creates a HAL component"
+    print( "Gladevcp_make_pins cannot be run on its own")
+    print( "It must be called by gladevcp or a python program")
+    print( "that loads and displays the glade panel and creates a HAL component")
 
 # vim: sts=4 sw=4 et

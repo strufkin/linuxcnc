@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # vim: sts=4 sw=4 et
 
-import gtk
+#import gtk
+import gi
+from gi.repository import Gtk
 
 class GladeBuilder:
     """ This is wrapper around Glade object that behaves just like gtk.Builder """
@@ -20,8 +22,8 @@ class GladeBuilder:
 def widget_name(widget):
     """ Helper function to retrieve widget name """
     idname = None
-    if isinstance(widget, gtk.Buildable):
-        idname = gtk.Buildable.get_name(widget)
+    if isinstance(widget, Gtk.Buildable):
+        idname = Gtk.Buildable.get_name(widget)
     if idname is None and hasattr(widget, 'get_name'):
         # XXX: Sometimes in Glade mode on HAL_VBox previous if is triggered
         # but name is None.
