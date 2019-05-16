@@ -81,8 +81,8 @@ class Application(gtk.Window):
 
 		try:
 			mergeid = ui.add_ui_from_file(uifile)
-		except gobject.GError, msg:
-			print "error building menus: %s" % (msg)
+		except gobject.GError as msg:
+			print("error building menus: %s" % (msg))
 		
 		box1 = gtk.VBox(False, 0)
 
