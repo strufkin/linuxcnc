@@ -42,6 +42,9 @@ m4_include([m4/ax_cxx_compile_stdcxx_11.m4])
 # make this optional - it will likely only result in warnings
 AX_CXX_COMPILE_STDCXX_11(noext,optional)
 
+TIRPC_CPPFLAGS="-I/usr/include/tirpc/"
+AC_SUBST(TIRPC_CPPFLAGS)
+
 ## _PYTHON_SYSCONFIG(expression, [action-if-succeeded], [action-if-failed])
 ##
 m4_define([_PYTHON_SYSCONFIG],
@@ -1399,7 +1402,7 @@ install with "sudo apt-get install tclx"])
 fi
 
 AC_MSG_CHECKING([for python pango and cairo modules])
-if $PYTHON -c 'import pango,cairo'; then
+if $PYTHON -c 'import gi; gi.require_version("Pango", "1.0"); gi.require_version("PangoCairo", "1.0"); from gi.repository import Pango,PangoCairo,cairo ; ' ; then
     AC_MSG_RESULT([found])
 else
     AC_MSG_RESULT(no)
@@ -1574,20 +1577,20 @@ if test "$PYTHON" = "none"; then
 fi
 
 AC_MSG_CHECKING([python version])
-if ! $PYTHON -c 'import sys;raise SystemExit,sys.hexversion<0x2070000'
+if ! $PYTHON -c 'import sys;raise SystemExit(sys.hexversion<0x3030000)'
 then
-    AC_MSG_ERROR(Python version too old (2.7 or newer required))
+    AC_MSG_ERROR(Python version too old (3.3 or newer required))
 fi
 AC_MSG_RESULT(OK)
 
 AC_MSG_CHECKING([version of python libraries])
-LIBPYTHON=`$PYTHON -c 'import distutils.sysconfig; print "python" + distutils.sysconfig.get_config_vars().get("VERSION")'`
+LIBPYTHON=`$PYTHON -c 'import distutils.sysconfig; print ("python" + distutils.sysconfig.get_config_vars().get("VERSION"))'`
 AC_MSG_RESULT($LIBPYTHON)
 
 AC_MSG_CHECKING([match between tk and Tkinter versions])
     
-PYTHON_TK_VERSION="`$PYTHON -c 'import _tkinter; print _tkinter.TK_VERSION'`"
-PYTHON_TCL_VERSION="`$PYTHON -c 'import _tkinter; print _tkinter.TCL_VERSION'`"
+PYTHON_TK_VERSION="`$PYTHON -c 'import _tkinter; print (_tkinter.TK_VERSION)'`"
+PYTHON_TCL_VERSION="`$PYTHON -c 'import _tkinter; print (_tkinter.TCL_VERSION)'`"
 
 if test "$PYTHON_TCL_VERSION" != "$TCL_VERSION"; then
     AC_MSG_RESULT([TCL mismatch: $TCL_VERSION vs $PYTHON_TCL_VERSION])
@@ -1601,7 +1604,7 @@ fi
 AC_MSG_RESULT([$PYTHON_TK_VERSION])
 
 AC_MSG_CHECKING(location of Python header files)
-INCLUDEPY=`$PYTHON -c 'import distutils.sysconfig; print distutils.sysconfig.get_config_vars().get("INCLUDEPY")'`
+INCLUDEPY=`$PYTHON -c 'import distutils.sysconfig; print (distutils.sysconfig.get_config_vars().get("INCLUDEPY"))'`
 AC_MSG_RESULT($INCLUDEPY)
 
 AC_MSG_CHECKING([for Python headers])
@@ -1631,7 +1634,7 @@ AC_CHECK_HEADER($INCLUDEPY/Python.h,[],
     [AC_MSG_ERROR([Required header Python.h missing.  Install it, or specify --disable-python to skip the parts of LinuxCNC that depend on Python])])
 
 AC_MSG_CHECKING(for site-package location)
-SITEPY=`$PYTHON -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib()'`
+SITEPY=`$PYTHON -c 'import distutils.sysconfig; print (distutils.sysconfig.get_python_lib())'`
 AC_MSG_RESULT($SITEPY)
 
 AC_CHECK_HEADERS(GL/gl.h GL/glu.h,[],[AC_MSG_ERROR([Required OpenGL header missing.  Install it, or specify --disable-python to skip the parts of LinuxCNC that depend on Python])])

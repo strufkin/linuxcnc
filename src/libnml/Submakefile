@@ -16,7 +16,7 @@ LIBNMLSRCS := $(addprefix libnml/, \
 \
 	linklist/linklist.cc)
 
-$(call TOOBJSDEPS, $(LIBNMLSRCS)) : EXTRAFLAGS=-fPIC
+$(call TOOBJSDEPS, $(LIBNMLSRCS)) : EXTRAFLAGS=-fPIC -ltirpc
 
 USERSRCS += $(LIBNMLSRCS)
 
@@ -26,4 +26,4 @@ TARGETS += ../lib/libnml.so ../lib/libnml.so.0
 	$(ECHO) Creating shared library $(notdir $@)
 	@mkdir -p ../lib
 	@rm -f $@
-	$(Q)$(CXX) $(LDFLAGS) -Wl,-soname,$(notdir $@) -shared -o $@ $^
+	$(Q)$(CXX) $(LDFLAGS) -ltirpc -Wl,-soname,$(notdir $@) -shared -o $@ $^
