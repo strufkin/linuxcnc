@@ -35,15 +35,28 @@
 #    it has only been allowed in p view.
 
 
+import gi
+gi.require_version("Gtk","3.0")
+from gi.repository import Gtk
+from gi.repository import Gdk
+from gi.repository import GObject
+from gi.repository import Gdk 
+from OpenGL.GL import *
+from OpenGL.GLU import *
+from OpenGL.GLUT import *
+#from OpenGL.GLX import glXSwapBuffers
 
-import gtk
-import gtk.gtkgl.widget
-import gtk.gdkgl
+#import gtk
+#import gtk.gtkgl.widget
+#import gtk.gdkgl
 import gtk.gdk
 
 import glnav
-import gobject
-import pango
+
+
+#import gobject
+#import pango
+
 
 import rs274.glcanon
 import rs274.interpret
@@ -59,7 +72,7 @@ import sys
 
 import _thread
 
-from minigl import *
+#from minigl import *
 
 class DummyProgress:
     def nextphase(self, unused): pass
@@ -78,23 +91,45 @@ class StatCanon(rs274.glcanon.GLCanon, rs274.interpret.StatMixin):
         rs274.glcanon.GLCanon.change_tool(self,pocket)
         rs274.interpret.StatMixin.change_tool(self,pocket)
 
-class Gremlin(gtk.gtkgl.widget.DrawingArea, glnav.GlNavBase,
-              rs274.glcanon.GlCanonDraw):
-    rotation_vectors = [(1.,0.,0.), (0., 0., 1.)]
+
+
+
+class Gremlin(Gtk.GLArea,rs274.glcanon.GlCanonDraw,glnav.GlNavBase):
+    rotation_vectors = [(1.,0.,0.), (0.,0.,1.)]
 
     def __init__(self, inifile):
+        Gtk.GLArea.__init__(self)
+        self.set_has_depth_buffer(True)
+        #self.set_has_alpha(True)
+        #'set_has_stencil_buffer',
+        glutInit()
+        glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH )
 
-        display_mode = ( gtk.gdkgl.MODE_RGB | gtk.gdkgl.MODE_DEPTH |
-                         gtk.gdkgl.MODE_DOUBLE )
-        glconfig = gtk.gdkgl.Config(mode=display_mode)
 
-        gtk.gtkgl.widget.DrawingArea.__init__(self, glconfig)
+
+
+
+
+#class Gremlin(gtk.gtkgl.widget.DrawingArea,glnav.GlNavBase,rs274.glcanon.GlCanonDraw):
+ #   rotation_vectors = [(1.,0.,0.), (0., 0., 1.)]
+
+    #def __init__(self, inifile):
+
+    #    display_mode = ( gtk.gdkgl.MODE_RGB | gtk.gdkgl.MODE_DEPTH |
+    #                     gtk.gdkgl.MODE_DOUBLE )
+    #    glconfig = gtk.gdkgl.Config(mode=display_mode)
+
+    #    gtk.gtkgl.widget.DrawingArea.__init__(self, glconfig)
+        #Gtk.DrawingArea.__init__(self)
+        print("Entered Init")
         glnav.GlNavBase.__init__(self)
+        print("PostGLnac")
         def C(s):
             a = self.colors[s + "_alpha"]
             s = self.colors[s]
             return [int(x * 255) for x in s + (a,)]
         self.inifile = inifile
+        print("postIniF")
         self.logger = linuxcnc.positionlogger(linuxcnc.stat(),
             C('backplotjog'),
             C('backplottraverse'),
@@ -104,6 +139,7 @@ class Gremlin(gtk.gtkgl.widget.DrawingArea, glnav.GlNavBase,
             C('backplotprobing'),
             self.get_geometry()
         )
+        print("PreThread")
         _thread.start_new_thread(self.logger.start, (.01,))
 
         rs274.glcanon.GlCanonDraw.__init__(self, linuxcnc.stat(), self.logger)
@@ -115,17 +151,22 @@ class Gremlin(gtk.gtkgl.widget.DrawingArea, glnav.GlNavBase,
         self.connect_after('realize', self.realize)
         self.connect('configure_event', self.reshape)
         self.connect('map_event', self.map)
-        self.connect('expose_event', self.expose)
+        #self.connect('expose_event', self.expose)
+        self.connect('draw', self.expose)
         self.connect('motion-notify-event', self.motion)
         self.connect('button-press-event', self.pressed)
         self.connect('button-release-event', self.select_fire)
         self.connect('scroll-event', self.scroll)
 
-        self.add_events(gtk.gdk.POINTER_MOTION_MASK)
-        self.add_events(gtk.gdk.POINTER_MOTION_HINT_MASK)
-        self.add_events(gtk.gdk.BUTTON_MOTION_MASK)
-        self.add_events(gtk.gdk.BUTTON_PRESS_MASK)
-        self.add_events(gtk.gdk.BUTTON_RELEASE_MASK)
+        self.add_events(Gdk.EventMask.POINTER_MOTION_MASK)#gtk.gdk.POINTER_MOTION_MASK)
+        self.add_events(Gdk.EventMask.POINTER_MOTION_HINT_MASK)
+        #self.add_events(gtk.gdk.POINTER_MOTION_HINT_MASK)
+        #self.add_events(gtk.gdk.BUTTON_MOTION_MASK)
+        self.add_events(Gdk.EventMask.BUTTON_MOTION_MASK)
+        self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        self.add_events(Gdk.EventMask.BUTTON_RELEASE_MASK)
+        #self.add_events(gtk.gdk.BUTTON_PRESS_MASK)
+        #self.add_events(gtk.gdk.BUTTON_RELEASE_MASK)
 
         self.fingerprint = ()
 
@@ -164,26 +205,46 @@ class Gremlin(gtk.gtkgl.widget.DrawingArea, glnav.GlNavBase,
             if self.stat.axis_mask & (1<<i) == 0: continue
             live_axis_count += 1
         self.num_joints = int(inifile.find("KINS", "JOINTS") or live_axis_count)
+                #  GLX.glXSwapBuffers(self.xdisplay, self.xwindow_id)
+        glDrawBuffer(GL_BACK)
+        glDisable(GL_CULL_FACE)
+        glLineStipple(2, 0x5555)
+        glDisable(GL_LIGHTING)
+        glClearColor(0,0,0,0)
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
 
     def activate(self):
-        glcontext = gtk.gtkgl.widget_get_gl_context(self)
-        gldrawable = gtk.gtkgl.widget_get_gl_drawable(self)
-
-        return gldrawable and glcontext and gldrawable.gl_begin(glcontext)
+        self.make_current()
+        #Gdk.GLContext.
+        #Gtk.
+        #gl_area = Gtk.GLArea
+        #new_gl_context = Gdk.Window.create_gl_context(self)
+        #Gdk.Window.create_gl_context
+        #glcontext = gtk.gtkgl.widget_get_gl_context(self)
+        #gldrawable = gtk.gtkgl.widget_get_gl_drawable(self)
+        #glBegin()
+        return True
+        #return gldrawable and glcontext and gldrawable.gl_begin(glcontext)
 
     def swapbuffers(self):
-        gldrawable = gtk.gtkgl.widget_get_gl_drawable(self)
-        gldrawable.swap_buffers()
+        #gldrawable = gtk.gtkgl.widget_get_gl_drawable(self)
+        #gldrawable.swap_buffers()
+        #glutSwapBuffers()
+        #glXSwapBuffers(self.get_display(), Gdk.get_default_root_window().get_xid())
+
+        return 
 
     def deactivate(self):
-        gldrawable = gtk.gtkgl.widget_get_gl_drawable(self)
-        gldrawable.gl_end()
+        #gldrawable = gtk.gtkgl.widget_get_gl_drawable(self)
+        #gldrawable.gl_end()
+        #glEnd()
+        return True
 
     def winfo_width(self):
-        return self.width
+        return  self.get_allocated_width()
 
     def winfo_height(self):
-        return self.height
+        return self.get_allocated_height()
 
     def reshape(self, widget, event):
         self.width = event.width
@@ -191,6 +252,8 @@ class Gremlin(gtk.gtkgl.widget.DrawingArea, glnav.GlNavBase,
 
     def expose(self, widget=None, event=None):
         if not self.initialised: return
+        self.basic_lighting()
+        print("exposeee")
         if self.perspective: self.redraw_perspective()
         else: self.redraw_ortho()
 
@@ -202,7 +265,7 @@ class Gremlin(gtk.gtkgl.widget.DrawingArea, glnav.GlNavBase,
         self.logger.clear()
 
     def map(self, *args):
-        gobject.timeout_add(50, self.poll)
+        GObject.timeout_add(50, self.poll)
 
     def poll(self):
         s = self.stat
@@ -224,11 +287,17 @@ class Gremlin(gtk.gtkgl.widget.DrawingArea, glnav.GlNavBase,
 
     @rs274.glcanon.with_context
     def realize(self, widget):
+        print("asdasdasd")
+        #ctx = self.get_context()
+        #ctx.make_current()
+        self.make_current()
+        #self.set_current_view()
         self.set_current_view()
         s = self.stat
         try:
             s.poll()
-        except:
+        except Exception as e:
+            print(e)
             return
         self._current_file = None
 
@@ -236,9 +305,10 @@ class Gremlin(gtk.gtkgl.widget.DrawingArea, glnav.GlNavBase,
 		glnav.use_pango_font('courier bold 16', 0, 128)
         self.font_linespace = linespace
         self.font_charwidth = width
+        print("preglcanondraw")
         rs274.glcanon.GlCanonDraw.realize(self)
-
         if s.file: self.load()
+        print("aaa")
 
     def set_current_view(self):
         if self.current_view not in ['p', 'x', 'y', 'y2', 'z', 'z2']:
@@ -342,7 +412,7 @@ class Gremlin(gtk.gtkgl.widget.DrawingArea, glnav.GlNavBase,
         if button1:
             self.select_prime(event.x, event.y) # select G-Code element
         
-        if button3 and (event.type == gtk.gdk._2BUTTON_PRESS):
+        if button3 and (event.type == Gdk.EventType._2BUTTON_PRESS):
             self.clear_live_plotter()
         elif button1 or button2 or button3:
             self.startZoom(event.y)
@@ -350,10 +420,10 @@ class Gremlin(gtk.gtkgl.widget.DrawingArea, glnav.GlNavBase,
 
     def motion(self, widget, event):
         if not self.use_default_controls:return
-        button1 = event.state & gtk.gdk.BUTTON1_MASK
-        button2 = event.state & gtk.gdk.BUTTON2_MASK
-        button3 = event.state & gtk.gdk.BUTTON3_MASK
-        shift = event.state & gtk.gdk.SHIFT_MASK
+        button1 = event.state & Gdk.ModifierType.BUTTON1_MASK
+        button2 = event.state & Gdk.ModifierType.BUTTON2_MASK
+        button3 = event.state & Gdk.ModifierType.BUTTON3_MASK
+        shift = event.state & Gdk.ModifierType.SHIFT_MASK
         # for lathe or plasmas rotation is not used, so we check for it
         # recomended to use mode 6 for that type of machines
         cancel = bool(self.lathe_option)
@@ -450,8 +520,8 @@ class Gremlin(gtk.gtkgl.widget.DrawingArea, glnav.GlNavBase,
 
     def scroll(self, widget, event):
         if not self.use_default_controls:return
-        if event.direction == gtk.gdk.SCROLL_UP: self.zoomin()
-        elif event.direction == gtk.gdk.SCROLL_DOWN: self.zoomout()
+        if event.direction == Gdk.EventType.SCROLL_UP: self.zoomin()
+        elif event.direction == Gdk.EventType.SCROLL_DOWN: self.zoomout()
 
     def report_gcode_error(self, result, seq, filename):
 

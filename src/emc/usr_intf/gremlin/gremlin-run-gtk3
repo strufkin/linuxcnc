@@ -7,13 +7,13 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-import gtk
+#import gtk
 
 #import pdb
 #pdb.set_trace()
 
 import linuxcnc
-from gremlin import Gremlin
+from gremlingtk3 import Gremlin
 
 def W(p, k, *args, **kw):
     w = k(*args, **kw)
@@ -21,7 +21,7 @@ def W(p, k, *args, **kw):
     p.add(w)
     return w
 
-class GremlinApp(gtk.Window):
+class GremlinApp(Gtk.Window):
     def __init__(self, inifile):
         if not inifile:
             inifile = os.environ.get('INI_FILE_NAME', None)
@@ -33,17 +33,18 @@ class GremlinApp(gtk.Window):
         except linuxcnc.error as detail:
             usage('Using filename = %s\n %s' % (inifile,detail))
 
-        gtk.Window.__init__(self)
-
-        self.vbox = W(self, gtk.VBox)
+        Gtk.Window.__init__(self)
+        self.vbox = W(self, Gtk.VBox)
         self.gremlin = W(self.vbox, Gremlin, inifile)
+        self.gremlin.__init__(inifile)
         self.gremlin.set_size_request(400, 400)
 
         self.connect("destroy", self.quit)
 
         self.show()
     def quit(self, event):
-        gtk.main_quit()
+        Gtk.main_quit()
+        #gtk.main_quit()
 
 
 def usage(msg=None):
@@ -65,7 +66,8 @@ def main():
         usage()
 
     g = GremlinApp(inifilename)
-    gtk.main()
+    Gtk.main()
+    #gtk.main()
 
 if __name__ == '__main__':
     main()
