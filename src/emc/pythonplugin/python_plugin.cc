@@ -27,6 +27,8 @@
 #include <boost/python/exec.hpp>
 #include <boost/python/extract.hpp>
 #include <boost/python/import.hpp>
+#include <boost/python/dict.hpp>
+#include <boost/filesystem.hpp>
 
 namespace bp = boost::python;
 
@@ -57,27 +59,74 @@ extern const char *strstore(const char *s);
 // execfile instead.
 // The bug was introduced at https://github.com/boostorg/python/commit/fe24ab9dd5440562e27422cd38f7de03356bfd16
 bp::object working_execfile(const char *filename, bp::object globals, bp::object locals) {
-    return bp::import("__builtin__").attr("execfile")(filename, globals, locals);
+
+//#if PYTHON_MAJOR_VERSION >= 3 
+  try
+  {
+      boost::filesystem::path p(filename);
+    // If path is /Users/whatever/blah/foo.py
+    bp::dict locals;
+    locals["modulename"] = p.stem().string(); // foo -> module name
+    locals["path"]   = p.native(); // /Users/whatever/blah/foo.py
+
+    bp::exec("import imp\n"
+         "newmodule = imp.load_module(modulename,open(path),path,('py','U',imp.PY_SOURCE))\nprint(locals()['newmodule'])\nprint(newmodule)\nprint(this.params)\n",
+         globals,locals);
+
+    PyRun_SimpleString("print(globals())\n");
+    bp::object retval = locals["newmodule"];
+
+    PyErr_Print();
+    //::handle<> handle(locals["newmodule"]);
+    //boost::python object(handle);
+    //_PyObject_Dump(locals["newmodule"]);
+    //return retval;
+    return locals["newmodule"];
+  }
+  catch( bp::error_already_set )
+  {
+      PyErr_Print();
+      //bp::error(bp::handle_exception());
+    return bp::object();
+  }
+
+
+
+
+//    return bp::import("__builtin__").attr("execfile")(filename, globals, locals);
+//#else
+//    return bp::import("__builtin__").attr("execfile")(filename, globals, locals);
+//#endif
 }
 
 int PythonPlugin::run_string(const char *cmd, bp::object &retval, bool as_file)
+
 {
+
     reload();
     try {
-	if (as_file)
-	    retval = working_execfile(cmd, main_namespace, main_namespace);
-	else
+	if (as_file) {
+	    //retval = working_execfile(cmd, main_namespace, main_namespace);
+        //PyRun_SimpleString("print(globals())\n");
+	    retval = bp::exec_file(cmd, main_namespace, main_namespace);
+    }
+	else {
 	    retval = bp::exec(cmd, main_namespace, main_namespace);
+    }
 	status = PLUGIN_OK;
     }
     catch (bp::error_already_set) {
+        //fprintf(stderr,"wtf occired[%s]",cmd);
+        //PyErr_Print();
 	if (PyErr_Occurred()) {
+        fprintf(stderr,"handleerrorrrr??\n");
 	    exception_msg = handle_pyerror();
 	} else
 	    exception_msg = "unknown exception";
 	status = PLUGIN_EXCEPTION;
 	bp::handle_exception();
 	PyErr_Clear();
+    fprintf(stderr,"PyErr_cleart\n");
     }
     if (status == PLUGIN_EXCEPTION) {
 	logPP(0, "run_string(%s): \n%s",
@@ -88,7 +137,6 @@ int PythonPlugin::run_string(const char *cmd, bp::object &retval, bool as_file)
 
 int PythonPlugin::call_method(bp::object method, bp::object &retval) 
 {
-
     logPP(1, "call_method()");
     if (status < PLUGIN_OK)
 	return status;
@@ -98,6 +146,7 @@ int PythonPlugin::call_method(bp::object method, bp::object &retval)
 	status = PLUGIN_OK;
     }
     catch (bp::error_already_set) {
+        //PyErr_Print();
 	if (PyErr_Occurred()) {
 	   exception_msg = handle_pyerror();
 	} else
@@ -117,7 +166,6 @@ int PythonPlugin::call(const char *module, const char *callable,
 		       bp::object tupleargs, bp::object kwargs, bp::object &retval)
 {
     bp::object function;
-
     if (callable == NULL)
 	return PLUGIN_NO_CALLABLE;
 
@@ -139,8 +187,9 @@ int PythonPlugin::call(const char *module, const char *callable,
 
 	// this does
 	PyObject *rv = PyObject_Call(function.ptr(), tupleargs.ptr(), kwargs.ptr());
-	if (PyErr_Occurred()) 
-	    bp::throw_error_already_set();
+	//if (PyErr_Occurred())
+    //    PyErr_Print();
+	//    bp::throw_error_already_set();
 	if (rv) 
 	    retval = bp::object(bp::borrowed(rv));
 	else
@@ -171,10 +220,12 @@ bool PythonPlugin::is_callable(const char *module,
     bool unexpected = false;
     bool result = false;
     bp::object function;
-
+    
+    logPP(10,"Entered is_callable[%s]", funcname);
     reload();
     if ((status != PLUGIN_OK) ||
 	(funcname == NULL)) {
+        logPP(0,"Plugin Not OK");
 	return false;
     }
     try {
@@ -185,7 +236,9 @@ bool PythonPlugin::is_callable(const char *module,
 	    bp::object submod_namespace = submod.attr("__dict__");
 	    function = submod_namespace[funcname];
 	}
+    //_PyObject_Dump(function.ptr());
 	result = PyCallable_Check(function.ptr());
+    PyErr_Print();
     }
     catch (bp::error_already_set) {
 	// KeyError expected if not callable
@@ -215,7 +268,6 @@ int PythonPlugin::reload()
     struct stat st;
     if (!reload_on_change)
 	return PLUGIN_OK;
-
     if (stat(abs_path, &st)) {
 	logPP(0, "reload: stat(%s) returned %s", abs_path, strerror(errno));
 	status = PLUGIN_STAT_FAILED;
@@ -238,8 +290,9 @@ std::string handle_pyerror()
 {
     PyObject *exc, *val, *tb;
     bp::object formatted_list, formatted;
-
+    //PyErr_Print();
     PyErr_Fetch(&exc, &val, &tb);
+    PyErr_NormalizeException(&exc,&val,&tb);
     bp::handle<> hexc(exc), hval(bp::allow_null(val)), htb(bp::allow_null(tb));
     bp::object traceback(bp::import("traceback"));
     if (!tb) {
@@ -265,12 +318,14 @@ int PythonPlugin::initialize()
 		main_namespace[inittab_entries[i]] = bp::import(inittab_entries[i].c_str());
 	    }
 	    if (toplevel) // only execute a file if there's one configured.
-		bp::object result = working_execfile(abs_path,
-						  main_namespace,
-						  main_namespace);
+		//bp::object result = working_execfile(abs_path,
+		//				  main_namespace,
+	//					  main_namespace);
+        bp::object result = bp::exec_file(abs_path,main_namespace,main_namespace);
 	    status = PLUGIN_OK;
 	}
 	catch (bp::error_already_set) {
+        //PyErr_Print();
 	    if (PyErr_Occurred()) {
 		exception_msg = handle_pyerror();
 	    } else
@@ -298,7 +353,15 @@ PythonPlugin::PythonPlugin(struct _inittab *inittab) :
     abs_path(0),
     log_level(0)
 {
+#if PY_MAJOR_VERSION >=3
+
+    //logPP(-1,"program %s", argv[0]);
+    //wchar_t *program = Py_DecodeLocale(abs_path, NULL);
+    //wchar_t *program = Py_DecodeLocale(argv[0], NULL);
+    //Py_SetProgramName(program);
+#else
     Py_SetProgramName((char *) abs_path);
+#endif
 
     if ((inittab != NULL) &&
 	PyImport_ExtendInittab(inittab)) {
@@ -410,7 +473,7 @@ PythonPlugin *python_plugin;
 PythonPlugin *PythonPlugin::instantiate(struct _inittab *inittab)
 {
     if (python_plugin == NULL) {
-	python_plugin = new PythonPlugin(inittab);
+        python_plugin = new PythonPlugin(inittab);
     }
     return (python_plugin->usable()) ? python_plugin : NULL;
 }

@@ -31,6 +31,8 @@
 	}							       \
     } while(0)
 
+namespace bp =  boost::python;
+
 const char *strstore(const char *s) { return strdup(s); }
 extern PythonPlugin *python_plugin;
 
@@ -40,7 +42,8 @@ void analyze(const char *what,bp::object retval)
     Py_XDECREF(res_str);
     printf("analyze: %s returned '%s' - '%s'\n",what,
 	   PyString_AsString(res_str),
-	   retval.ptr()->ob_type->tp_name);
+	   Py_TYPE(retval.ptr())->tp_name);
+	   //retval.ptr()->ob_type->tp_name);
 }
 
 void exercise(PythonPlugin *pp,const char *mod, const char*func,  bp::tuple tupleargs,   bp::dict kwargs)

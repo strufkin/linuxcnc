@@ -125,7 +125,7 @@ Interp::Interp()
 {
     _setup.init_once = 1;  
     init_named_parameters();  // need this before Python init.
- 
+
     if (!PythonPlugin::instantiate(builtin_modules)) {  // factory
 	Error("Interp ctor: cant instantiate Python plugin");
 	return;
@@ -149,9 +149,11 @@ Interp::Interp()
 
 	// make "this" visible without importing interpreter explicitly
 	bp::object retval;
+	python_plugin->run_string("import interpreter", retval, false);
 	python_plugin->run_string("from interpreter import this", retval, false);
     }
     catch (bp::error_already_set) {
+        PyErr_Print();
 	std::string exception_msg;
 	if (PyErr_Occurred()) {
 	    exception_msg = handle_pyerror();
@@ -1220,16 +1222,25 @@ int Interp::init()
       try {
 	  bp::object npmod =  python_plugin->main_namespace[NAMEDPARAMS_MODULE];
 	  bp::dict predef_dict = bp::extract<bp::dict>(npmod.attr("__dict__"));
-	  bp::list iterkeys = (bp::list) predef_dict.iterkeys();
-	  for (int i = 0; i < bp::len(iterkeys); i++)  {
-	      std::string key = bp::extract<std::string>(iterkeys[i]);
+	  bp::list keys =  predef_dict.keys();
+	  for (int i = 0; i < len(keys); i++)  {
+          bp::extract<std::string> extracted_key(keys[i]);
+          if(!extracted_key.check()){
+            fprintf(stderr,"Key invalid\n");
+            continue;
+          }
+
+	      std::string key = extracted_key;
 	      bp::object value = predef_dict[key];
-	      if (PyCallable_Check(value.ptr())) {
+         if (PyCallable_Check(value.ptr())) {
+	     
 		  CHP(init_python_predef_parameter(key.c_str()));
 	      }
 	  }
       }
       catch (bp::error_already_set) {
+          //fprintf(stderr, "Error occured while filling up namedparameters\n");
+          //PyErr_Print();
 	  std::string exception_msg;
 	  bool unexpected = false;
 	  // KeyError is ok - this means the namedparams module doesnt exist
@@ -1251,7 +1262,9 @@ int Interp::init()
 	  plist.append(*_setup.pythis); // self
 	  tupleargs = bp::tuple(plist);
 	  kwargs = bp::dict();
-
+      //_PyObject_Dump(tupleargs.ptr());
+      //_PyObject_Dump(kwargs.ptr());
+      //_PyObject_Dump(retval.ptr());
 	  python_plugin->call(NULL, INIT_FUNC, tupleargs, kwargs, retval);
 	  CHKS(python_plugin->plugin_status() == PLUGIN_EXCEPTION,
 	       "pycall(%s):\n%s", INIT_FUNC,
@@ -1592,11 +1605,10 @@ int Interp::_read(const char *command)  //!< may be NULL or a string to read
   {
       EXECUTING_BLOCK(_setup).offset = ftell(_setup.file_pointer);
   }
-
+  
   read_status =
     read_text(command, _setup.file_pointer, _setup.linetext,
               _setup.blocktext, &_setup.line_length);
-
   if (read_status == INTERP_ERROR && _setup.skipping_to_sub) {
     _setup.skipping_to_sub = NULL;
   }
