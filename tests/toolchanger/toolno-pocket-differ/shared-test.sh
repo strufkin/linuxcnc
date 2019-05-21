@@ -16,9 +16,7 @@ linuxcnc -r sim.ini &
 TOGO=80
 while [  $TOGO -gt 0 ]; do
     echo trying to connect to linuxcncrsh TOGO=$TOGO
-    if nc -z localhost 5007; then
-        break
-    fi
+    (echo > /dev/tcp/localhost/5007) >/dev/null 2>&1 &&  break
     sleep 0.25
     TOGO=$(($TOGO - 1))
 done

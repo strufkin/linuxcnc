@@ -21,7 +21,7 @@ hm2_test_unload = 'hm2_test.0: hm2_test fails HM2 registration'
 
 sought_error = sys.argv[1]
 if sought_error == None:
-    print "supply an error message on the command line!"
+    print("supply an error message on the command line!")
     sys.exit(1)
 
 
@@ -55,8 +55,8 @@ while 1:
             state = LOOKING_FOR_LOAD
 
 
-if (result == 0): print sought_error
-else: print "test pattern %s didnt produce error '%s'" % (os.getenv("TEST_PATTERN"), sought_error)
+if (result == 0): print(sought_error)
+else: print("test pattern %s didnt produce error '%s'" % (os.getenv("TEST_PATTERN"), sought_error))
 
 sys.exit(result)
 

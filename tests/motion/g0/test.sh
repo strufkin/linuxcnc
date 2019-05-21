@@ -3,7 +3,7 @@
 #export PATH=$PATH:$EMC2_HOME/tests/helpers
 #source $EMC2_HOME/tests/helpers/test-functions.sh
 
-emc motion-test.ini &
+linuxcnc motion-test.ini &
 
 # let emc come up
 sleep 4 

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 rm -f gcode-output
 
@@ -9,9 +10,8 @@ linuxcnc -r linuxcncrsh-test.ini &
 TOGO=80
 while [  $TOGO -gt 0 ]; do
     echo trying to connect to linuxcncrsh TOGO=$TOGO
-    if nc -z localhost 5007; then
-        break
-    fi
+
+    (echo > /dev/tcp/localhost/5007) >/dev/null 2>&1 &&  break
     sleep 0.25
     TOGO=$(($TOGO - 1))
 done
@@ -68,7 +68,8 @@ printf "P is %.6f\n" -200 >> expected-gcode-output
     echo set wait done
 
     # here comes a big blob
-    dd bs=4096 if=lots-of-gcode
+    #dd bs=4096 if=lots-of-gcode
+    cat lots-of-gcode
 
     echo set mdi m100 p-200
     echo set wait done
