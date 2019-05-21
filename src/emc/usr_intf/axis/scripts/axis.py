@@ -31,26 +31,26 @@ sys.path.insert(0, os.path.join(BASE, "lib", "python"))
 sys.excepthook = sys.__excepthook__
 
 import gettext;
-gettext.install("linuxcnc", localedir=os.path.join(BASE, "share", "locale"), unicode=True)
+gettext.install("linuxcnc", localedir=os.path.join(BASE, "share", "locale"))
 
-import array, time, atexit, tempfile, shutil, errno, thread, select, re, getopt
+import array, time, atexit, tempfile, shutil, errno, _thread, select, re, getopt
 import traceback
 
 # Print Tk errors to stdout. python.org/sf/639266
-import Tkinter 
-OldTk = Tkinter.Tk
+import tkinter 
+OldTk = tkinter.Tk
 class Tk(OldTk):
     def __init__(self, *args, **kw):
         OldTk.__init__(self, *args, **kw)
         self.tk.createcommand('tkerror', self.tkerror)
 
     def tkerror(self, arg):
-        print "TCL error in asynchronous code:"
-        print self.tk.call("set", "errorInfo")
+        print("TCL error in asynchronous code:")
+        print(self.tk.call("set", "errorInfo"))
 
-Tkinter.Tk = Tk
+tkinter.Tk = Tk
 
-from Tkinter import *
+from tkinter import *
 from minigl import *
 RTLD_NOW, RTLD_GLOBAL = 0x1, 0x100  # XXX portable?
 old_flags = sys.getdlopenflags()
@@ -70,7 +70,7 @@ from math import hypot, atan2, sin, cos, pi, sqrt
 import linuxcnc
 from glnav import *
 
-if os.environ.has_key("AXIS_NO_HAL"):
+if "AXIS_NO_HAL" in os.environ:
     hal_present = 0;
 else:
     hal_present = 1;
@@ -79,8 +79,8 @@ if hal_present == 1 :
     import hal
 
 
-import ConfigParser
-cp = ConfigParser.ConfigParser
+import configparser
+cp = configparser.ConfigParser
 class AxisPreferences(cp):
     types = {
         bool: cp.getboolean,
@@ -95,30 +95,30 @@ class AxisPreferences(cp):
         self.fn = os.path.expanduser("~/.axis_preferences")
         self.read(self.fn)
 
-    def getpref(self, option, default=False, type=bool):
+    def getpref(self, option, default='False', type=bool):
         m = self.types.get(type)
         try:
             o = m(self, "DEFAULT", option)
-        except Exception, detail:
-            print detail
-            self.set("DEFAULT", option, default)
+        except Exception as detail:
+            print(detail)
+            self.set("DEFAULT", option, str(default))
             self.write(open(self.fn, "w"))
             o = default
         return o
 
     def putpref(self, option, value, type=bool):
-        self.set("DEFAULT", option, type(value))
+        self.set("DEFAULT", option, str(type(value)))
         self.write(open(self.fn, "w"))
 
 if sys.argv[1] != "-ini":
-    raise SystemExit, "-ini must be first argument"
+    raise SystemExit("-ini must be first argument")
 
 inifile = linuxcnc.ini(sys.argv[2])
 
 ap = AxisPreferences()
 
 os.system("xhost -SI:localuser:gdm -SI:localuser:root > /dev/null 2>&1")
-root_window = Tkinter.Tk(className="Axis")
+root_window = tkinter.Tk(className="Axis")
 dpi_value = root_window.winfo_fpixels('1i')
 root_window.tk.call('tk', 'scaling', '-displayof', '.', dpi_value / 72.0)
 root_window.iconify()
@@ -145,7 +145,7 @@ try:
     root_window.tk.call("set","::KINEMATICS_IDENTITY",linuxcnc.KINEMATICS_IDENTITY)
     nf.source_lib_tcl(root_window,"axis.tcl")
 except TclError:
-    print root_window.tk.call("set", "errorInfo")
+    print(root_window.tk.call("set", "errorInfo"))
     raise
 
 def General_Halt():
@@ -311,11 +311,11 @@ def masked_axes_count():
         if s.axis_mask & (1<<i): ct +=1
     return ct
 
-class Notification(Tkinter.Frame):
+class Notification(tkinter.Frame):
     def __init__(self, master):
         self.widgets = []
         self.cache = []
-        Tkinter.Frame.__init__(self, master)
+        tkinter.Frame.__init__(self, master)
 
     def clear(self,iconname=None):
         if iconname:
@@ -345,10 +345,10 @@ class Notification(Tkinter.Frame):
             text.configure(text=message)
             widgets = frame, icon, text, button, iconname
         else:
-            frame = Tkinter.Frame(self)
-            icon = Tkinter.Label(frame, image=iconname)
-            text = Tkinter.Label(frame, text=message, wraplength=300, justify="left")
-            button = Tkinter.Button(frame, image=close)
+            frame = tkinter.Frame(self)
+            icon = tkinter.Label(frame, image=iconname)
+            text = tkinter.Label(frame, text=message, wraplength=300, justify="left")
+            button = tkinter.Button(frame, image=close)
             widgets = frame, icon, text, button, iconname
             text.pack(side="left")
             icon.pack(side="left")
@@ -411,7 +411,7 @@ class MyOpengl(GlCanonDraw, Opengl):
 
     def get_resources(self):
         self.colors = dict(GlCanonDraw.colors)
-        for c in self.colors.keys():
+        for c in list(self.colors.keys()):
             if isinstance(c, tuple):
                 c, d = c
             elif c.endswith("_alpha"):
@@ -718,7 +718,7 @@ class LivePlotter:
             C('backplotprobing'),
             geometry, foam
         )
-        o.after_idle(lambda: thread.start_new_thread(self.logger.start, (.01,)))
+        o.after_idle(lambda: _thread.start_new_thread(self.logger.start, (.01,)))
 
         global feedrate_blackout, rapidrate_blackout, spindlerate_blackout, maxvel_blackout
         feedrate_blackout=rapidrate_blackout=spindlerate_blackout=maxvel_blackout=time.time()+1
@@ -754,8 +754,8 @@ class LivePlotter:
             return
         try:
             self.stat.poll()
-        except linuxcnc.error, detail:
-            print "error", detail
+        except linuxcnc.error as detail:
+            print("error", detail)
             del self.stat
             return
 
@@ -990,8 +990,8 @@ class Progress:
             self.lastcount = count
             try:
                 width = int(t.tk.call("winfo", "width", ".info.progress"))
-            except Tkinter.TclError, detail:
-                print detail
+            except tkinter.TclError as detail:
+                print(detail)
                 return
             height = int(t.tk.call("winfo", "height", ".info.progress"))
             t.tk.call(".info.progress", "coords", "1",
@@ -1076,7 +1076,7 @@ def filter_program(program_filter, infilename, outfilename):
             t.update()
             r,w,x = select.select([p.stderr], [], [], 0.100)
             if r:
-                stderr_line = p.stderr.readline()
+                stderr_line = p.stderr.readline().decode()
                 m = progress_re.match(stderr_line)
                 if m:
                     progress.update(int(m.group(1)), 1)
@@ -1084,7 +1084,7 @@ def filter_program(program_filter, infilename, outfilename):
                     stderr_text.append(stderr_line)
                     sys.stderr.write(stderr_line)
         # .. might be something left on stderr
-        for line in p.stderr:
+        for line in p.stderr.readline().decode():
             m = progress_re.match(line)
             if not m:
                 stderr_text.append(line)
@@ -1234,7 +1234,7 @@ def open_file_guts(f, filtered=False, addrecent=True):
         o.lp.set_depth(from_internal_linear_unit(o.get_foam_z()),
                        from_internal_linear_unit(o.get_foam_w()))
 
-    except Exception, e:
+    except Exception as e:
         notifications.add("error", str(e))
     finally:
         # Before unbusying, I update again, so that any keystroke events
@@ -1364,7 +1364,7 @@ def activate_ja_widget(i, force=0):
         # free jogging (joints) if:
         #   trivkins config and kinstype not both
         # letters are special case for key bindings
-        if isinstance(i, basestring):
+        if isinstance(i, str):
             letter = i
         elif not get_jog_mode():
             letter = "xyzabcuvw"[i]
@@ -1524,11 +1524,11 @@ class _prompt_areyousure:
         self.status=False
         m = Message(t, text=text, aspect=500, anchor="w", justify="left")
         self.w = w = StringVar(t)
-        l = Tkinter.Message(t, textvariable=w, justify="left", anchor="w",
+        l = tkinter.Message(t, textvariable=w, justify="left", anchor="w",
                 aspect=500)
-        self.buttons = f = Tkinter.Frame(t)
-        self.ok = Tkinter.Button(f, text=_("Ok"), command=self.do_ok, width=10,height=1,padx=0,pady=.25, default="active")
-        self.cancel = Tkinter.Button(f, text=_("Cancel"), command=self.do_cancel, width=10,height=1,padx=0,pady=.25, default="normal")
+        self.buttons = f = tkinter.Frame(t)
+        self.ok = tkinter.Button(f, text=_("Ok"), command=self.do_ok, width=10,height=1,padx=0,pady=.25, default="active")
+        self.cancel = tkinter.Button(f, text=_("Cancel"), command=self.do_cancel, width=10,height=1,padx=0,pady=.25, default="normal")
         t.wm_protocol("WM_DELETE_WINDOW", self.cancel.invoke)
         t.bind("<Return>", lambda event: (self.ok.flash(), self.ok.invoke()))
         t.bind("<KP_Enter>", lambda event: (self.ok.flash(), self.ok.invoke()))
@@ -1557,7 +1557,7 @@ class _prompt_areyousure:
         self.t.wait_window()
         try:
             self.t.destroy()
-        except Tkinter.TclError:
+        except tkinter.TclError:
             pass
         return self.result()
 
@@ -1578,13 +1578,13 @@ class _prompt_float:
         self.vv = vv = DoubleVar(t)
         self.u = u = BooleanVar(t)
         self.w = w = StringVar(t)
-        l = Tkinter.Message(t, textvariable=w, justify="left", anchor="w",
+        l = tkinter.Message(t, textvariable=w, justify="left", anchor="w",
                 aspect=500)
         v.set(default)
         self.e = e = Entry(t, textvariable=v)
-        self.buttons = f = Tkinter.Frame(t)
-        self.ok = Tkinter.Button(f, text=_("OK"), command=self.do_ok, width=10,height=1,padx=0,pady=.25, default="active")
-        self.cancel = Tkinter.Button(f, text=_("Cancel"), command=self.do_cancel, width=10,height=1,padx=0,pady=.25, default="normal")
+        self.buttons = f = tkinter.Frame(t)
+        self.ok = tkinter.Button(f, text=_("OK"), command=self.do_ok, width=10,height=1,padx=0,pady=.25, default="active")
+        self.cancel = tkinter.Button(f, text=_("Cancel"), command=self.do_cancel, width=10,height=1,padx=0,pady=.25, default="normal")
         v.trace("w", self.check_valid)
         t.wm_protocol("WM_DELETE_WINDOW", self.cancel.invoke)
         t.bind("<Return>", lambda event: (self.ok.flash(), self.ok.invoke()))
@@ -1664,7 +1664,7 @@ class _prompt_float:
             self.t.after_cancel(self._after)
         try:
             self.t.destroy()
-        except Tkinter.TclError:
+        except tkinter.TclError:
             pass
         return self.result()
 
@@ -1690,7 +1690,7 @@ class _prompt_touchoff(_prompt_float):
                     unit_str += _(" radius")
                 else:
                     unit_str += _(" diameter")
-        else: unit_str = _(u"\xb0")
+        else: unit_str = _("\xb0")
         self.text_pattern = text_pattern
         text = text_pattern % self.workpiece_or_fixture(defaultsystem)
         _prompt_float.__init__(self, title, text, default, unit_str)
@@ -1749,7 +1749,9 @@ property_names = [
     ('c', _("C bounds:"))
 ]
 
-def dist((x,y,z),(p,q,r)):
+def dist(x_y_z, p_q_r):
+    (x,y,z) = x_y_z
+    (p,q,r) = p_q_r
     return ((x-p)**2 + (y-q)**2 + (z-r)**2) ** .5
 
 # returns units/sec
@@ -2235,7 +2237,7 @@ class TclCommands(nf.TclCommands):
                 return
             elif omode == 2: return
 
-            e = string.split(editor)
+            e = editor.split()
             e.append(loaded_file)
             e.append("&")
             root_window.tk.call("exec", *e)
@@ -2244,7 +2246,7 @@ class TclCommands(nf.TclCommands):
         if tooltable is None:
             pass
         else:
-            e = string.split(tooleditor)
+            e = tooleditor.split()
             e.append(tooltable)
             e.append("&")
             root_window.tk.call("exec", *e)
@@ -2388,7 +2390,7 @@ class TclCommands(nf.TclCommands):
                 finally:    
                     f.close()
             except IOError:
-                print >>sys.stderr, "Can't open MDI history file [%s] for writing" % file_name
+                print("Can't open MDI history file [%s] for writing" % file_name, file=sys.stderr)
 
     def mdi_history_hist2clip(*event):
         cursel = widgets.mdi_history.curselection()
@@ -2425,8 +2427,8 @@ class TclCommands(nf.TclCommands):
                         mdi_history_index = widgets.mdi_history.index("end") - 1
             commands.mdi_history_write_to_file(mdi_history_save_filename, history_size)
             return
-        except Tkinter.TclError:
-            print "DBG: Sorry, but the clipboard is empty ..."
+        except tkinter.TclError:
+            print("DBG: Sorry, but the clipboard is empty ...")
 
     def mdi_history_double_butt_1(event):
         if widgets.mdi_command.cget("state") == "disabled":
@@ -2594,10 +2596,10 @@ class TclCommands(nf.TclCommands):
         jora = vars.ja_rbutton.get()
         if jora in trajcoordinates:
             if s.kinematics_type != linuxcnc.KINEMATICS_IDENTITY:
-                print _("home_joint <%s> Use joint mode for homing")%jora
+                print(_("home_joint <%s> Use joint mode for homing")%jora)
                 return
             if jora in duplicate_coord_letters:
-                print _("\nIndividual axis homing disallowed for duplicated letter:<%s> ")%jora
+                print(_("\nIndividual axis homing disallowed for duplicated letter:<%s> ")%jora)
                 return
             jnum = trajcoordinates.index(jora)
         else:
@@ -2614,7 +2616,7 @@ class TclCommands(nf.TclCommands):
         jora = vars.ja_rbutton.get()
         if jora in trajcoordinates:
             if s.kinematics_type != linuxcnc.KINEMATICS_IDENTITY:
-                print _("unhome_joint <%s> Use joint mode for unhoming")%jora
+                print(_("unhome_joint <%s> Use joint mode for unhoming")%jora)
                 return
             jnum = trajcoordinates.index(jora)
         else:
@@ -2856,7 +2858,7 @@ class TclCommands(nf.TclCommands):
             "-filetypes",
              ((_("rs274ngc files"), ".ngc"),))
         if not f: return
-        f = unicode(f)
+        f = str(f)
         open_directory = os.path.dirname(f)
         if get_filter(loaded_file):
             srcfile = os.path.join(tempdir, os.path.basename(loaded_file))
@@ -2864,7 +2866,7 @@ class TclCommands(nf.TclCommands):
             srcfile = loaded_file
         try:
             shutil.copyfile(srcfile, f)
-        except (shutil.Error, os.error, IOError), detail:
+        except (shutil.Error, os.error, IOError) as detail:
             tb = traceback.format_exc()
             root_window.tk.call("nf_dialog", ".error", _("Error saving file"),
                 str(detail), "error", 0, _("OK"))
@@ -2883,7 +2885,9 @@ class TclCommands(nf.TclCommands):
 
     def inifindall(section, item):
         items = tuple(inifile.findall(section, item))
-        return root_window.tk.merge(*items)
+        print(items)
+        return items
+        #return root_window.tk.merge(*items) ### FIXME: need to check
 
 commands = TclCommands(root_window)
 
@@ -3311,7 +3315,7 @@ try:
     vars.maxvel_speed.set(float(max_velocity)*60)
     vars.max_maxvel.set(float(max_velocity))
 except Exception:
-    print (_("\nMissing required specifier:\n%s"
+    print(_("\nMissing required specifier:\n%s"
            "\nSee the \'INI Configuration\' documents\n")%msg)
     raise SystemExit
 
@@ -3324,7 +3328,7 @@ try:
             default_jog_linear_speed = max_linear_speed
         vars.jog_speed.set(float(default_jog_linear_speed)*60)
 except Exception:
-    print (_("\nMissing required specifier (has linear joint or axis):\n%s"
+    print(_("\nMissing required specifier (has linear joint or axis):\n%s"
            "\nSee the \'INI Configuration\' documents\n")%msg)
     raise SystemExit
 
@@ -3337,7 +3341,7 @@ try:
         if default_jog_angular_speed is None: default_jog_angular_speed = max_angular_speed
         vars.jog_aspeed.set(float(default_jog_angular_speed)*60)
 except Exception:
-    print (_("\nWarning: Missing required specifier (has angular joint or axis):\n%s"
+    print(_("\nWarning: Missing required specifier (has angular joint or axis):\n%s"
            "\nSee the \'INI Configuration\' documents\n")%msg)
     max_angular_speed = 1
     default_jog_angular_speed = 1
@@ -3345,18 +3349,18 @@ except Exception:
     vars.jog_aspeed.set(float(default_jog_angular_speed)*60)
 
 # temporary debugging prints
-print >>sys.stderr, "note: MAXV     max: %.3f units/sec %.3f units/min"%(
-      float(max_velocity),60*float(max_velocity))
+print("note: MAXV     max: %.3f units/sec %.3f units/min"%(
+      float(max_velocity),60*float(max_velocity)), file=sys.stderr)
 if has_linear_joint_or_axis:
-    print >>sys.stderr, "note: LJOG     max: %.3f units/sec %.3f units/min"%(
-          float(max_linear_speed),60*float(max_linear_speed))
-    print >>sys.stderr, "note: LJOG default: %.3f units/sec %.3f units/min"%(
-          float(default_jog_linear_speed),60*float(default_jog_linear_speed))
+    print("note: LJOG     max: %.3f units/sec %.3f units/min"%(
+          float(max_linear_speed),60*float(max_linear_speed)), file=sys.stderr)
+    print("note: LJOG default: %.3f units/sec %.3f units/min"%(
+          float(default_jog_linear_speed),60*float(default_jog_linear_speed)), file=sys.stderr)
 if has_angular_joint_or_axis:
-    print >>sys.stderr, "note: AJOG     max: %.3f units/sec %.3f units/min"%(
-          float(max_angular_speed),60*float(max_angular_speed))
-    print >>sys.stderr, "note: AJOG default: %.3f units/sec %.3f units/min"%(
-          float(default_jog_angular_speed),60*float(default_jog_angular_speed))
+    print("note: AJOG     max: %.3f units/sec %.3f units/min"%(
+          float(max_angular_speed),60*float(max_angular_speed)), file=sys.stderr)
+    print("note: AJOG default: %.3f units/sec %.3f units/min"%(
+          float(default_jog_angular_speed),60*float(default_jog_angular_speed)), file=sys.stderr)
 
 # always allow tcl widgets creation (though they may be forgotten later)
 if not has_linear_joint_or_axis:
@@ -3386,13 +3390,13 @@ vars.has_editor.set(editor is not None)
 tooleditor = inifile.find("DISPLAY", "TOOL_EDITOR") or "tooledit"
 tooltable = inifile.find("EMCIO", "TOOL_TABLE")
 if inifile.find("RS274NGC", "PARAMETER_FILE") is None:
-    raise SystemExit, (
-          "Missing ini file setting for [RS274NGC]PARAMETER_FILE")
+    raise SystemExit((
+          "Missing ini file setting for [RS274NGC]PARAMETER_FILE"))
 try:
     lu = units(inifile.find("TRAJ", "LINEAR_UNITS"))
 except TypeError:
-    raise SystemExit, (
-          "Missing [TRAJ]LINEAR_UNITS or ANGULAR_UNITS")
+    raise SystemExit((
+          "Missing [TRAJ]LINEAR_UNITS or ANGULAR_UNITS"))
 a_axis_wrapped = inifile.find("AXIS_A", "WRAPPED_ROTARY")
 b_axis_wrapped = inifile.find("AXIS_B", "WRAPPED_ROTARY")
 c_axis_wrapped = inifile.find("AXIS_C", "WRAPPED_ROTARY")
@@ -3408,7 +3412,7 @@ if lu == 1:
 else:
     root_window.tk.eval("${pane_top}.jogspeed.l1 configure -text in/min")
     root_window.tk.eval("${pane_top}.maxvel.l1 configure -text in/min")
-root_window.tk.eval(u"${pane_top}.ajogspeed.l1 configure -text deg/min")
+root_window.tk.eval("${pane_top}.ajogspeed.l1 configure -text deg/min")
 
 homing_order_defined = 1
 # set homing_order_defined only if ALL joints specify a HOME_SEQUENCE
@@ -3427,12 +3431,12 @@ s.poll()
 statfail=0
 statwait=.01
 while ((s.joints == 0) or (s.kinematics_type < linuxcnc.KINEMATICS_IDENTITY)):
-    print "waiting for s.joints<%d>, s.kinematics_type<%d>"%(s.joints,s.kinematics_type)
+    print("waiting for s.joints<%d>, s.kinematics_type<%d>"%(s.joints,s.kinematics_type))
     time.sleep(statwait)
     statfail+=1
     statwait *= 2
     if statfail > 8:
-        raise SystemExit, (
+        raise SystemExit(
             "A configuration error is preventing LinuxCNC from starting.\n"
             "More information may be available when running from a terminal.")
     s.poll()
@@ -3490,10 +3494,10 @@ if duplicate_coord_letters != "":
     # sophisticated kinematics module that accepts duplicated coordinate
     # letters with some special requirements -- hence the warning:
 
-    print (_("Warning: Forward kinematics must handle duplicate coordinate letters:%s")%
+    print(_("Warning: Forward kinematics must handle duplicate coordinate letters:%s")%
           duplicate_coord_letters)
 if len(trajcoordinates) > jointcount:
-    print (_("Note: number of [TRAJ]COORDINATES=%(t)s exceeds [KINS]JOINTS=%(l)d")
+    print(_("Note: number of [TRAJ]COORDINATES=%(t)s exceeds [KINS]JOINTS=%(l)d")
           %({'t':trajcoordinates,'l':jointcount}))
 
 def lathe_historical_config():
@@ -3514,7 +3518,7 @@ def aletter_for_jnum(jnum):
         raise SystemExit("aletter_for_jnum: Must be KINEMATICS_IDENTITY")
     else:
         guess = trajcoordinates.upper()[jnum]
-        print "aletter_for_jnum guessing %d --> %s"%(jnum,guess)
+        print("aletter_for_jnum guessing %d --> %s"%(jnum,guess))
         return guess
 
 num_joints = s.joints
@@ -3525,8 +3529,8 @@ for jnum in range(num_joints):
         ja_id = aletter_for_jnum(jnum)
         if ja_id.lower() in duplicate_coord_letters:
             if ja_id not in gave_individual_homing_message:
-                print _("\nNote:\nIndividual axis homing is not currently supported for")
-                print _("KINEMATICS_IDENTITY with duplicate axis letter <%s>\n")%ja_id
+                print(_("\nNote:\nIndividual axis homing is not currently supported for"))
+                print(_("KINEMATICS_IDENTITY with duplicate axis letter <%s>\n")%ja_id)
                 gave_individual_homing_message = gave_individual_homing_message + ja_id
             continue # no menu item for this individual axis letter
         widgets.homemenu.add_command(
@@ -3554,9 +3558,9 @@ for jnum in range(num_joints):
 
 astep_size = step_size = 1
 for a in range(linuxcnc.MAX_AXIS):
-    a = "XYZABCUVW"[a]
+    ax = "XYZABCUVW"[a]
     if s.axis_mask & (1<<i) == 0: continue
-    section = "AXIS_%s" % a
+    section = "AXIS_%s" % ax
     unit = inifile.find(section, "UNITS") or lu
     unit = units(unit) * 25.4
     f = inifile.find(section, "SCALE") or inifile.find(section, "INPUT_SCALE") or "8000"
@@ -3627,8 +3631,8 @@ if jog_order is None:
         jog_order = unique_axes(trajcoordinates, "XYZABCUVW")
 else: jog_order = jog_order.upper()
 
-print >>sys.stderr, "note: jog_order=%r" % jog_order
-print >>sys.stderr, "note: jog_invert=%r" % jog_invert
+print("note: jog_order=%r" % jog_order, file=sys.stderr)
+print("note: jog_invert=%r" % jog_invert, file=sys.stderr)
 bind_axis("Left", "Right", 0)
 bind_axis("Down", "Up", 1)
 bind_axis("Next", "Prior", 2)
@@ -3745,7 +3749,7 @@ def rClicker(e):
         (' ------ ',None),   #
         (_('Run from here'), lambda e=e: select_run_from(e)),
         ]
-    rmenu = Tkinter.Menu(None, tearoff=0, takefocus=0)
+    rmenu = tkinter.Menu(None, tearoff=0, takefocus=0)
     cas = {}
     for (txt, cmd) in nclst:
         if txt == ' ------ ':
@@ -3792,7 +3796,7 @@ if hal_present == 1 :
     if vcp:
         import vcpparse
         comp.setprefix("pyvcp")
-        f = Tkinter.Frame(root_window)
+        f = tkinter.Frame(root_window)
         f.grid(row=0, column=4, rowspan=6, sticky="nw", padx=4, pady=4)
         vcpparse.filename = vcp
         vcpparse.create_vcp(f, comp)
@@ -3804,7 +3808,7 @@ if hal_present == 1 :
 
     gladevcp = inifile.find("DISPLAY", "GLADEVCP")
     if gladevcp:
-        f = Tkinter.Frame(root_window, container=1, borderwidth=0, highlightthickness=0)
+        f = tkinter.Frame(root_window, container=1, borderwidth=0, highlightthickness=0)
         f.grid(row=0, column=5, rowspan=6, sticky="nsew", padx=4, pady=4)
     else:
         f = None
@@ -3848,7 +3852,7 @@ code = []
 addrecent = True
 if args:
     initialfile = args[0]
-elif os.environ.has_key("AXIS_OPEN_FILE"):
+elif "AXIS_OPEN_FILE" in os.environ:
     initialfile = os.environ["AXIS_OPEN_FILE"]
 elif inifile.find("DISPLAY", "OPEN_FILE"):
     initialfile = inifile.find("DISPLAY", "OPEN_FILE")
@@ -3878,7 +3882,7 @@ if o.canon:
 def destroy_splash():
     try:
         root_window.send("popimage", "destroy", ".")
-    except Tkinter.TclError:
+    except tkinter.TclError:
         pass
 
 def _dynamic_tab(name, text):
@@ -3891,7 +3895,7 @@ def _dynamic_tabs(inifile):
     tab_names = inifile.findall("DISPLAY", "EMBED_TAB_NAME")
     tab_cmd   = inifile.findall("DISPLAY", "EMBED_TAB_COMMAND")
     if len(tab_names) != len(tab_cmd):
-        print "Invalid tab configuration"
+        print("Invalid tab configuration")
         # Complain somehow
         return
 
@@ -3900,9 +3904,9 @@ def _dynamic_tabs(inifile):
     rxid = root_window.winfo_id()
     os.environ['AXIS_FORWARD_EVENTS_TO'] = str(rxid)
 
-    for i,t,c in zip(range(len(tab_cmd)), tab_names, tab_cmd):
+    for i,t,c in zip(list(range(len(tab_cmd))), tab_names, tab_cmd):
         w = _dynamic_tab("user_" + str(i), t)
-        f = Tkinter.Frame(w, container=1, borderwidth=0, highlightthickness=0)
+        f = tkinter.Frame(w, container=1, borderwidth=0, highlightthickness=0)
         f.pack(fill="both", expand=1)
         xid = f.winfo_id()
         cmd = c.replace('{XID}', str(xid)).split()
@@ -3913,12 +3917,12 @@ def _dynamic_tabs(inifile):
 
 @atexit.register
 def kill_dynamic_childs():
-    for c,_,w in _dynamic_childs.values():
+    for c,_,w in list(_dynamic_childs.values()):
         if not w:
             c.terminate()
 
 def check_dynamic_tabs():
-    for c,cmd,w in _dynamic_childs.values():
+    for c,cmd,w in list(_dynamic_childs.values()):
         if not w:
             continue
         r = c.poll()
@@ -3926,8 +3930,8 @@ def check_dynamic_tabs():
             continue
         if r is None:
             break
-        print 'Embeded tab command "%s" exited with error: %s' %\
-                             (" ".join(cmd), r)
+        print('Embeded tab command "%s" exited with error: %s' %\
+                             (" ".join(cmd), r))
         raise SystemExit(r)
     else:
         if postgui_halfile:
@@ -3935,7 +3939,7 @@ def check_dynamic_tabs():
                 res = os.spawnvp(os.P_WAIT, "haltcl", ["haltcl", "-i", vars.emcini.get(), postgui_halfile])
             else:
                 res = os.spawnvp(os.P_WAIT, "halcmd", ["halcmd", "-i", vars.emcini.get(), "-f", postgui_halfile])
-            if res: raise SystemExit, res
+            if res: raise SystemExit(res)
         root_window.deiconify()
         destroy_splash()
         return
@@ -4004,7 +4008,7 @@ widgets.spinoverride.set(100)
 commands.set_spindlerate(100)
 
 def forget(widget, *pins):
-    if os.environ.has_key("AXIS_NO_AUTOCONFIGURE"): return
+    if "AXIS_NO_AUTOCONFIGURE" in os.environ: return
     if hal_present == 1 :
         for p in pins:
             if hal.pin_has_writer(p): return
@@ -4042,7 +4046,7 @@ for j in range(linuxcnc.MAX_JOINTS):
         if hal.pin_has_writer("joint.%d.pos-lim-sw-in" % j):
             has_limit_switch=1
             break
-    except NameError, detail:
+    except NameError as detail:
         break
 if not has_limit_switch:
     widgets.override.grid_forget()
@@ -4059,10 +4063,10 @@ if user_command_file:
 rcfile = os.path.expanduser(rcfile)
 if os.path.exists(rcfile):
     try:
-        execfile(rcfile)
+        exec(compile(open(rcfile).read(), rcfile, 'exec'))
     except:
         tb = traceback.format_exc()
-        print >>sys.stderr, tb
+        print(tb, file=sys.stderr)
         root_window.tk.call("nf_dialog", ".error", _("Error in ~/.axisrc"),
             tb, "error", 0, _("OK"))
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #    This is a component of AXIS, a front-end for LinuxCNC
 #    Copyright 2004, 2005, 2006 Jeff Epler <jepler@unpythonic.net>
 #
@@ -37,10 +37,10 @@ if len(sys.argv) > 1:
 else:
     try:
         while 1:
-            mdi = raw_input("MDI> ")
+            mdi = input("MDI> ")
             if mdi == '':
                 s.poll()
-                print s.position
+                print(s.position)
             else:
                 c.mode(linuxcnc.MODE_MDI)
                 c.mdi(mdi)
