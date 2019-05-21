@@ -134,32 +134,43 @@ Interp::Interp()
     try {
 	// this import will register the C++->Python converter for Interp
 	bp::object interp_module = bp::import("interpreter");
-	
+if (PyErr_Occurred()) PyErr_Print();	
+    printf("interpreter bp::importred\n");	
 	// use a boost::cref to avoid per-call instantiation of the
 	// Interp Python wrapper (used for the 'self' parameter in handlers)
 	// since interp.init() may be called repeatedly this would create a new
 	// wrapper instance on every init(), abandoning the old one and all user attributes
 	// tacked onto it, so make sure this is done exactly once
 	_setup.pythis = new boost::python::object(boost::cref(*this));
-	
+if (PyErr_Occurred()) PyErr_Print();	
+    printf("interpreter bp::importred2\n");	
 	// alias to 'interpreter.this' for the sake of ';py, .... ' comments
 	// besides 'this', eventually use proper instance names to handle
 	// several instances 
 	bp::scope(interp_module).attr("this") =  *_setup.pythis;
 
+if (PyErr_Occurred()) PyErr_Print();	
+    printf("interpreter bp::importred3\n");	
 	// make "this" visible without importing interpreter explicitly
 	bp::object retval;
-	python_plugin->run_string("from interpreter import this", retval, false);
+	python_plugin->run_string("import interpreter", retval, false);
+if (PyErr_Occurred()) PyErr_Print();	
+    printf("interpreter bp::importred4\n");	
+	python_plugin->run_string("from interpreter import this\nprint(dir(this))\n", retval, false);
+if (PyErr_Occurred()) PyErr_Print();	
+    printf("interpreter bp::importred5\n");	
     }
     catch (bp::error_already_set) {
 	std::string exception_msg;
 	if (PyErr_Occurred()) {
 	    exception_msg = handle_pyerror();
 	} else
+    {PyErr_Print();
 	    exception_msg = "unknown exception";
-	bp::handle_exception();
-	PyErr_Clear();
-	Error("PYTHON: exception during 'this' export:\n%s\n",exception_msg.c_str());
+        }
+    bp::handle_exception();
+    PyErr_Clear();
+    Error("PYTHON3: exception during 'this' export:\n%s\n",exception_msg.c_str());
     }
 }
 
@@ -1224,9 +1235,15 @@ int Interp::init()
       try {
 	  bp::object npmod =  python_plugin->main_namespace[NAMEDPARAMS_MODULE];
 	  bp::dict predef_dict = bp::extract<bp::dict>(npmod.attr("__dict__"));
-	  bp::list iterkeys = (bp::list) predef_dict.iterkeys();
-	  for (int i = 0; i < bp::len(iterkeys); i++)  {
-	      std::string key = bp::extract<std::string>(iterkeys[i]);
+	  bp::list keys =  predef_dict.keys();
+	  for (int i = 0; i < len(keys); i++)  {
+          bp::extract<std::string> extracted_key(keys[i]);
+          if(!extracted_key.check()){
+            fprintf(stderr,"Key invalid\n");
+            continue;
+          }
+
+	      std::string key = extracted_key;
 	      bp::object value = predef_dict[key];
 	      if (PyCallable_Check(value.ptr())) {
 		  CHP(init_python_predef_parameter(key.c_str()));

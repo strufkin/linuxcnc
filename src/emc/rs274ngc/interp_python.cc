@@ -57,6 +57,8 @@ namespace bp = boost::python;
 #include "rs274ngc_interp.hh"
 #include "units.h"
 
+#include "py3c/py3c.h"
+
 extern    PythonPlugin *python_plugin;
 
 #define PYCHK(bad, fmt, ...)				       \
@@ -68,29 +70,37 @@ extern    PythonPlugin *python_plugin;
         }                                                      \
     } while(0)
 
-#define IS_STRING(x) (PyObject_IsInstance(x.ptr(), (PyObject*)&PyString_Type))
-#define IS_INT(x) (PyObject_IsInstance(x.ptr(), (PyObject*)&PyInt_Type))
+#define IS_STRING(x) (PyObject_IsInstance(x.ptr(), (PyObject*)&PyUnicode_Type))
+#define IS_INT(x) (PyObject_IsInstance(x.ptr(), (PyObject*)&PyLong_Type))
+
 
 // decode a Python exception into a string.
 std::string handle_pyerror()
 {
-    using namespace boost::python;
-    using namespace boost;
-
     PyObject *exc,*val,*tb;
-    object formatted_list, formatted;
+    bp::object formatted_list, formatted;
+
     PyErr_Fetch(&exc,&val,&tb);
-    handle<> hexc(exc),hval(allow_null(val)),htb(allow_null(tb));
-    object traceback(import("traceback"));
+    PyErr_NormalizeException(&exc,&val,&tb);
+    bp::handle<> 
+        hexc(bp::allow_null(exc)), 
+        hval(bp::allow_null(val)),
+        htb(bp::allow_null(tb));
+    if(!hval)
+    {
+        return bp::extract<std::string>(bp::str(hexc));
+    } else{
+        bp::object traceback(bp::import("traceback"));
     if (!tb) {
-	object format_exception_only(traceback.attr("format_exception_only"));
+        bp::object format_exception_only(traceback.attr("format_exception_only"));
 	formatted_list = format_exception_only(hexc,hval);
     } else {
-	object format_exception(traceback.attr("format_exception"));
+        bp::object format_exception(traceback.attr("format_exception"));
 	formatted_list = format_exception(hexc,hval,htb);
     }
-    formatted = str("\n").join(formatted_list);
-    return extract<std::string>(formatted);
+    formatted = bp::str("\n").join(formatted_list);
+    return bp::extract<std::string>(formatted);
+    }
 }
 
 int Interp::py_reload()
@@ -207,20 +217,28 @@ int Interp::pycall(setup_pointer settings,
 
 		    // a generator was returned. This must have been the first time call to a handler
 		    // which contains a yield. Extract next() method.
-		    frame->pystuff.impl->generator_next = bp::getattr(retval, "next");
+		    frame->pystuff.impl->generator_next = bp::getattr(retval, "__next__");
 
 		    // and  call it for the first time.
 		    // Expect execution up to first 'yield INTERP_EXECUTE_FINISH'.
 		    frame->pystuff.impl->py_returned_int = bp::extract<int>(frame->pystuff.impl->generator_next());
 		    frame->pystuff.impl->py_return_type = RET_YIELD;
-		
+
+#if PY_MAJOR_VERSION >=3
+        } else if (PyStr_Check(retval.ptr())) {
+#else
 		} else if (PyString_Check(retval.ptr())) {  
+#endif		
 		    // returning a string sets the interpreter error message and aborts
 		    char *msg = bp::extract<char *>(retval);
 		    ERM("%s", msg);
 		    frame->pystuff.impl->py_return_type = RET_ERRORMSG;
 		    status = INTERP_ERROR;
+#if PY_MAJOR_VERSION >=3
+		} else if (PyLong_Check(retval.ptr())) {  
+#else
 		} else if (PyInt_Check(retval.ptr())) {  
+#endif
 		    frame->pystuff.impl->py_returned_int = bp::extract<int>(retval);
 		    frame->pystuff.impl->py_return_type = RET_INT;
 		    logPy("Python call %s.%s returned int: %d", module, funcname, frame->pystuff.impl->py_returned_int);
@@ -234,8 +252,13 @@ int Interp::pycall(setup_pointer settings,
 		    Py_XDECREF(res_str);
 		    ERM("Python call %s.%s returned '%s' - expected generator, int, or float value, got %s",
 			module, funcname,
-			PyString_AsString(res_str),
-			retval.ptr()->ob_type->tp_name);
+#if PY_MAJOR_VERSION >=3
+
+            PyStr_AsString(res_str),
+#else
+            PyString_AsString(res_str),
+#endif
+			Py_TYPE(retval.ptr())->tp_name);
 		    status = INTERP_ERROR;
 		}
 	    } else {
@@ -249,7 +272,11 @@ int Interp::pycall(setup_pointer settings,
 	    // a plain int (INTERP_OK, INTERP_ERROR, INTERP_EXECUTE_FINISH...) is expected
 	    // must have returned an int
 	    if ((retval.ptr() != Py_None) &&
-		(PyInt_Check(retval.ptr()))) {
+#if PY_MAJOR_VERSION >=3
+        (PyLong_Check(retval.ptr()))) {
+#else
+        (PyInt_Check(retval.ptr()))) {
+#endif
 
 // FIXME check new return value convention
 		status = frame->pystuff.impl->py_returned_int = bp::extract<int>(retval);
@@ -260,8 +287,12 @@ int Interp::pycall(setup_pointer settings,
 		res_str = PyObject_Str(retval.ptr());
 		ERM("Python internal function '%s' expected tuple or int return value, got '%s' (%s)",
 		    funcname,
-		    PyString_AsString(res_str),
-		    retval.ptr()->ob_type->tp_name);
+#if PY_MAJOR_VERSION >=3
+            PyStr_AsString(res_str),
+#else
+            PyString_AsString(res_str),
+#endif
+		    Py_TYPE(retval.ptr())->tp_name);
 		Py_XDECREF(res_str);
 		status = INTERP_ERROR;
 	    }
