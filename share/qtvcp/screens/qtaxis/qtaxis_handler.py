@@ -143,7 +143,7 @@ class HandlerClass:
             LOG.debug('Exception in KEYBINDING: {}'.format (e))
         except Exception as e:
             LOG.debug('Exception in KEYBINDING:', exc_info=e)
-            print 'Error in, or no function for: %s in handler file for-%s'%(KEYBIND.convert(event),key)
+            print(('Error in, or no function for: %s in handler file for-%s'%(KEYBIND.convert(event),key)))
             return False
 
     ########################
@@ -168,16 +168,16 @@ class HandlerClass:
         #print INFO.AVAILABLE_AXES
         #print INFO.GET_NAME_FROM_JOINT
         if mode == linuxcnc.TRAJ_MODE_COORD:
-            print 'Mode Coordinate'
+            print('Mode Coordinate')
         # Joint mode
         elif mode == linuxcnc.TRAJ_MODE_FREE:
             if STATUS.stat.kinematics_type == linuxcnc.KINEMATICS_IDENTITY:
                 self.show_axes()
             else:
-                print 'Mode Free'
+                print('Mode Free')
                 self.show_joints()
         elif mode == linuxcnc.TRAJ_MODE_TELEOP:
-            print 'Mode Teleop'
+            print('Mode Teleop')
             self.show_axes()
 
     #######################
@@ -226,7 +226,7 @@ class HandlerClass:
             self.w['ras_%s'%i].hide()
 
     def _set_user_system_text(self, w, data):
-        print data
+        print(data)
         convert = { 1:"G54 ", 2:"G55 ", 3:"G56 ", 4:"G57 ", 5:"G58 ", 6:"G59 ", 7:"G59.1 ", 8:"G59.2 ", 9:"G59.3 "}
         unit = convert[int(data)]
         for i in ('x','y','z'):
@@ -319,7 +319,7 @@ class HandlerClass:
     (_("Ctrl-Space"), _("Clear notifications")),
     (_("Alt-F, M, V"), _("Open a Menu")),
 ]
-        help =  zip(help1,help2)
+        help =  list(zip(help1,help2))
         msg = QtWidgets.QDialog()
         msg.setWindowTitle("Quick Reference")
         button = QtWidgets.QPushButton("Ok")

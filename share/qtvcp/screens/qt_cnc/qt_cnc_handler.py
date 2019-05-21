@@ -121,7 +121,7 @@ class HandlerClass:
             LOG.debug('Exception in KEYBINDING: {}'.format (e))
         except Exception as e:
             LOG.debug('Exception in KEYBINDING:', exc_info=e)
-            print 'Error in, or no function for: %s in handler file for-%s'%(KEYBIND.convert(event),key)
+            print('Error in, or no function for: %s in handler file for-%s'%(KEYBIND.convert(event),key))
             return False
 
     ########################
@@ -163,7 +163,7 @@ class HandlerClass:
     # called from 'machine on' button's python command in designer
     # to test that function
     def test_function(self, text=None):
-        print text
+        print(text)
 
     def editor_exit(self):
         self.w.gcodeeditor.exit()
