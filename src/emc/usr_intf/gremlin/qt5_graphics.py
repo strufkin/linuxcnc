@@ -258,7 +258,9 @@ class Lcnc_3dGraphics(QGLWidget,  glcanon.GlCanonDraw, glnav.GlNavBase):
         self.set_current_view()
 
     def calculate_gcode_properties(self, canon):
-        def dist((x,y,z),(p,q,r)):
+        def dist(a, b):
+            x,y,z = a
+            p,q,r = b
             return ((x-p)**2 + (y-q)**2 + (z-r)**2) ** .5
         def from_internal_units(pos, unit=None):
             if unit is None:

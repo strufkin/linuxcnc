@@ -252,14 +252,14 @@ class mdi_control:
         self.mdi.go_to_position(axis,position,feedrate)
 
     def set_user_system(self,system):
-        print "set user system to :G",system
+        print("set user system to :G",system)
         premode = self.mdi.emcstat.task_mode
         self.mdi.set_user_system(system)
         self.mdi.emccommand.mode(premode)
         self.mdi.emccommand.wait_complete()
 
     def index_tool(self,toolnumber):
-        print "set tool number to :T",toolnumber
+        print("set tool number to :T",toolnumber)
         premode = self.mdi.emcstat.task_mode
         self.mdi.index_tool(toolnumber)
         #self.mdi.emccommand.mode(premode)

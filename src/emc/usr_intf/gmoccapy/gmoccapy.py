@@ -29,24 +29,27 @@
 import traceback           # needed to launch traceback errors
 import hal                 # base hal class to react to hal signals
 import hal_glib            # needed to make our own hal pins
-import gtk                 # base for pygtk widgets and constants
+
+#import gtk                 # base for pygtk widgets and constants
+import gi
+from gi.repository import Gtk, Pango, Vte, GObject
 import sys                 # handle system calls
 import os                  # needed to get the paths and directories
-import pango               # needed for font settings and changing
+#import pango               # needed for font settings and changing
 import gladevcp.makepins   # needed for the dialog"s calculator widget
 import atexit              # needed to register child's to be closed on closing the GUI
 import subprocess          # to launch onboard and other processes
-import vte                 # To get the embedded terminal
+#import vte                 # To get the embedded terminal
 import tempfile            # needed only if the user click new in edit mode to open a new empty file
 import linuxcnc            # to get our own error system
-import gobject             # needed to add the timer for periodic
+#import gobject             # needed to add the timer for periodic
 import locale              # for setting the language of the GUI
 import gettext             # to extract the strings to be translated
 
 from gladevcp.gladebuilder import GladeBuilder
 
 from time import strftime  # needed for the clock in the GUI
-from gtk._gtk import main_quit
+#from gtk._gtk import main_quit
 
 # Throws up a dialog with debug info when an error is encountered
 def excepthook(exc_type, exc_obj, exc_tb):
@@ -57,9 +60,9 @@ def excepthook(exc_type, exc_obj, exc_tb):
     except NameError:
         w = None
     lines = traceback.format_exception(exc_type, exc_obj, exc_tb)
-    m = gtk.MessageDialog(w,
-                          gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                          gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+    m = Gtk.MessageDialog(w,0,
+                          #gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                          Gtk.MessageType.ERROR, gtk.ButtonsType.OK,
                           ("Found an error!\nThe following information may be useful in troubleshooting:\n\n")
                           + "".join(lines))
     m.show()
@@ -154,7 +157,7 @@ class gmoccapy(object):
         # prepare for translation / internationalisation
         locale.setlocale(locale.LC_ALL, '')
         locale.bindtextdomain("gmoccapy", LOCALEDIR)
-        gettext.install("gmoccapy", localedir=LOCALEDIR, unicode=True)
+        gettext.install("gmoccapy", localedir=LOCALEDIR)
         gettext.bindtextdomain("gmoccapy", LOCALEDIR)
 
         # needed components to comunicate with hal and linuxcnc
@@ -472,7 +475,7 @@ class gmoccapy(object):
         LANGDIR = os.path.join(BASE, "share", "gtksourceview-2.0", "language-specs")
         file_path = os.path.join(LANGDIR, "gcode.lang")
         if os.path.isfile(file_path):
-            print "**** GMOCCAPY INFO: Gcode.lang found ****"
+            print("**** GMOCCAPY INFO: Gcode.lang found ****")
             self.widgets.gcode_view.set_language("gcode", LANGDIR)
 
         # set the user colors and digits of the DRO
@@ -929,14 +932,14 @@ class gmoccapy(object):
             try:
                 self.builder.add_from_file(screen2)
                 self.screen2 = True
-            except Exception, e:
-                print (_("**** GMOCCAPY ERROR ****"))
-                print _("**** screen 2 GLADE ERROR: ****")
+            except Exception as e:
+                print(_("**** GMOCCAPY ERROR ****"))
+                print(_("**** screen 2 GLADE ERROR: ****"))
                 self.widgets.tbtn_use_screen2.set_sensitive(False)
                 traceback.print_exc()
         else:
             print (_("**** GMOCCAPY INFO ****"))
-            print _("**** No gmoccapy2.glade file present ****")
+            print(_("**** No gmoccapy2.glade file present ****"))
             self.widgets.tbtn_use_screen2.set_sensitive(False)
 
 # =============================================================
@@ -982,7 +985,7 @@ class gmoccapy(object):
 
     # Gotta kill the embedded processes when gmoccapy closes
     def _kill_dynamic_childs(self):
-        for child in self._dynamic_childs.values():
+        for child in list(self._dynamic_childs.values()):
             child.terminate()
 
     def set_up_user_tab_widgets(self, tab_locations):
@@ -1288,10 +1291,10 @@ class gmoccapy(object):
             sid = self.onboard_kb.stdout.readline()
             socket = gtk.Socket()
             self.widgets.key_box.add(socket)
-            socket.add_id(long(sid))
+            socket.add_id(int(sid))
             socket.show()
             self.onboard = True
-        except Exception, e:
+        except Exception as e:
             print (_("**** GMOCCAPY ERROR ****"))
             print (_("**** Error with launching virtual keyboard,"))
             print (_("**** is onboard or matchbox-keyboard installed? ****"))
@@ -1559,7 +1562,7 @@ class gmoccapy(object):
         try:
             self.stat.poll()
         except:
-            raise SystemExit, "gmoccapy can not poll linuxcnc status any more"
+            raise SystemExit("gmoccapy can not poll linuxcnc status any more")
 
         error = self.error_channel.poll()
         if error:
@@ -1879,7 +1882,7 @@ class gmoccapy(object):
 
 
     def on_hal_status_mode_mdi(self, widget):
-        print ("MDI Mode", self.tool_change)
+        print( ("MDI Mode", self.tool_change))
 
         # if the edit offsets button is active, we do not want to change
         # pages, as the user may want to edit several axis values
@@ -2034,7 +2037,7 @@ class gmoccapy(object):
 
     # kill keyboard and estop machine before closing
     def on_window1_destroy(self, widget, data=None):
-        print "estoping / killing gmoccapy"
+        print("estoping / killing gmoccapy")
         if self.onboard:
             self._kill_keyboard()
         self.command.state(linuxcnc.STATE_OFF)
@@ -2333,7 +2336,7 @@ class gmoccapy(object):
                 self.on_increment_changed(self.incr_rbt_list[rbt], self.jog_increments[rbt])
         else:
             print("This key has not been implemented yet")
-            print "Key {0} ({1:d}) was pressed".format(keyname, event.keyval), signal, self.last_key_event
+            print("Key {0} ({1:d}) was pressed".format(keyname, event.keyval), signal, self.last_key_event)
         self.last_key_event = keyname, signal
         return True
 
@@ -2448,15 +2451,15 @@ class gmoccapy(object):
         print(_("**** GMOCCAPY ERROR ****"))
         print(_("**** {0} ****").format(formatted_lines[0]))
         traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
-        print (formatted_lines[-1])
+        print( (formatted_lines[-1]))
 
     def _sensitize_widgets(self, widgetlist, value):
         for name in widgetlist:
             try:
                 self.widgets[name].set_sensitive(value)
-            except Exception, e:
-                print (_("**** GMOCCAPY ERROR ****"))
-                print _("**** No widget named: {0} to sensitize ****").format(name)
+            except Exception as e:
+                print(_("**** GMOCCAPY ERROR ****"))
+                print(_("**** No widget named: {0} to sensitize ****").format(name))
                 traceback.print_exc()
 
     def _update_active_gcodes(self):
@@ -2926,7 +2929,7 @@ class gmoccapy(object):
             if joint_or_axis in "012345678":
                 joint_btn = True
             else:
-                print ("unknown joint or axis {0}".format(joint_or_axis))
+                print( ("unknown joint or axis {0}".format(joint_or_axis)))
                 return
 
         if not joint_btn:
@@ -2952,7 +2955,7 @@ class gmoccapy(object):
 
         JOGMODE = self._get_jog_mode()
      
-        if self.distance <> 0:  # incremental jogging
+        if self.distance != 0:  # incremental jogging
             self.command.jog(linuxcnc.JOG_INCREMENT, JOGMODE, joint_axis_number, direction * velocity, self.distance)
         else:  # continuous jogging
             self.command.jog(linuxcnc.JOG_CONTINUOUS, JOGMODE, joint_axis_number, direction * velocity)
@@ -3011,7 +3014,7 @@ class gmoccapy(object):
 
     def on_ntb_main_switch_page(self, widget, page, page_num, data=None):
         if self.widgets.tbtn_setup.get_active():
-            if page_num != 1L:  # setup page is active,
+            if page_num != 1:  # setup page is active,
                 self.widgets.tbtn_setup.set_active(False)
 
     def on_tbtn_setup_toggled(self, widget, data=None):
@@ -3948,7 +3951,7 @@ class gmoccapy(object):
             if result:
                 self.halcomp["toolchange-changed"] = True
             else:
-                print"toolchange abort", self.stat.tool_in_spindle, self.halcomp['toolchange-number']
+                print("toolchange abort", self.stat.tool_in_spindle, self.halcomp['toolchange-number'])
                 self.command.abort()
                 self.halcomp['toolchange-number'] = self.stat.tool_in_spindle
                 self.halcomp['toolchange-change'] = False
@@ -4082,8 +4085,8 @@ class gmoccapy(object):
             message = _("Could not understand the entered tool number. Will not change anything")
             self.dialogs.warning_dialog(self, _("Important Warning!"), message)
 
-# =========================================================
-# gremlin relevant calls
+    # =========================================================
+    # gremlin relevant calls
     def on_rbt_view_p_toggled(self, widget, data=None):
         if self.widgets.rbt_view_p.get_active():
             self.widgets.gremlin.set_property("view", "p")
@@ -4319,8 +4322,8 @@ class gmoccapy(object):
             self.widgets.tbtn_switch_mode.set_label(_("World\nmode"))
             self.set_motion_mode(1)
 
-# =========================================================
-# Hal Pin Handling Start
+    # =========================================================
+    # Hal Pin Handling Start
 
     def _on_counts_changed(self, pin, widget):
         if not self.initialized:
@@ -4755,9 +4758,9 @@ if __name__ == "__main__":
     app = gmoccapy(sys.argv)
 
     inifile = sys.argv[2]
-    print ("**** GMOCCAPY INFO : inifile = {0} ****:".format(sys.argv[2]))
+    print( ("**** GMOCCAPY INFO : inifile = {0} ****:".format(sys.argv[2])))
     postgui_halfile = app.get_ini_info.get_postgui_halfile()
-    print ("**** GMOCCAPY INFO : postgui halfile = {0} ****:".format(postgui_halfile))
+    print( ("**** GMOCCAPY INFO : postgui halfile = {0} ****:".format(postgui_halfile)))
 
     if postgui_halfile:
         if postgui_halfile.lower().endswith('.tcl'):
@@ -4765,7 +4768,7 @@ if __name__ == "__main__":
         else:
             res = os.spawnvp(os.P_WAIT, "halcmd", ["halcmd", "-i", inifile, "-f", postgui_halfile])
         if res:
-            raise SystemExit, res
+            raise SystemExit(res)
 
-    gtk.main()
+    Gtk.main()
 

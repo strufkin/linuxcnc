@@ -329,7 +329,7 @@ Pressing cancel will close linuxcnc.""" % target)
         # push the window id for embedment into an external program
         if opts.push_XID:
             wid = int(window.winId())
-            print >> sys.stdout,wid
+            print(wid, file=sys.stdout)
             sys.stdout.flush()
 
         # for window resize and or position options
@@ -407,7 +407,7 @@ Pressing cancel will close linuxcnc.""" % target)
                 res = os.spawnvp(os.P_WAIT, "haltcl", ["haltcl", "-i",self.inipath, postgui_halfile])
             else:
                 res = os.spawnvp(os.P_WAIT, "halcmd", ["halcmd", "-i",self.inipath,"-f", postgui_halfile])
-            if res: raise SystemExit, res
+            if res: raise SystemExit(res)
 
     # This can be called normally or by control c
     # call optional handlerfile cleanup function

@@ -37,7 +37,7 @@ from optparse import Option, OptionParser
 import textwrap
 import locale
 import copy
-import commands
+import subprocess
 import fnmatch
 import subprocess
 import gobject
@@ -74,7 +74,7 @@ def get_value(w):
 def makedirs(d):
     try:
         os.makedirs(d)
-    except os.error, detail:
+    except os.error as detail:
         if detail.errno != errno.EEXIST: raise
 makedirs(os.path.expanduser("~/linuxcnc/configs"))
 
@@ -102,14 +102,14 @@ BASE = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), ".."))
 LOCALEDIR = os.path.join(BASE, "share", "locale")
 import gettext;
 domain = "linuxcnc"
-gettext.install(domain, localedir=LOCALEDIR, unicode=True)
+gettext.install(domain, localedir=LOCALEDIR)
 locale.setlocale(locale.LC_ALL, '')
 locale.bindtextdomain(domain, LOCALEDIR)
 gettext.bindtextdomain(domain, LOCALEDIR)
 
 def iceil(x):
-    if isinstance(x, (int, long)): return x
-    if isinstance(x, basestring): x = float(x)
+    if isinstance(x, int): return x
+    if isinstance(x, str): x = float(x)
     return int(math.ceil(x))
 
 prefs = preferences.preferences()
@@ -130,11 +130,11 @@ class Widgets:
         self._xml = xml
     def __getattr__(self, attr):
         r = self._xml.get_object(attr)
-        if r is None: raise AttributeError, "No widget %r" % attr
+        if r is None: raise AttributeError("No widget %r" % attr)
         return r
     def __getitem__(self, attr):
         r = self._xml.get_object(attr)
-        if r is None: raise IndexError, "No widget %r" % attr
+        if r is None: raise IndexError("No widget %r" % attr)
         return r
 
 
@@ -967,12 +967,12 @@ If you have a REALLY large config that you wish to convert to this newer version
             dialog.destroy()
         else:
             for para in warnings:
-                for line in textwrap.wrap(para, 78): print line
-                print
-            print
+                for line in textwrap.wrap(para, 78): print(line)
+                print()
+            print()
             if force: return
-            response = raw_input(_("Continue? "))
-            if response[0] not in _("yY"): raise SystemExit, 1
+            response = input(_("Continue? "))
+            if response[0] not in _("yY"): raise SystemExit(1)
 
     def add_md5sum(self, filename, mode="r"):
         self.md5sums.append((filename, md5sum(filename)))
@@ -995,10 +995,10 @@ If you have a REALLY large config that you wish to convert to this newer version
 
         filename = os.path.join(base, "tool.tbl")
         file = open(filename, "w")
-        print >>file, "T0 P0 ;"
-        print >>file, "T1 P1 ;"
-        print >>file, "T2 P2 ;"
-        print >>file, "T3 P3 ;"
+        print("T0 P0 ;", file=file)
+        print("T1 P1 ;", file=file)
+        print("T2 P2 ;", file=file)
+        print("T3 P3 ;", file=file)
         file.close()
 
         filename = "%s.pncconf" % base
@@ -1007,7 +1007,7 @@ If you have a REALLY large config that you wish to convert to this newer version
                             None, "pncconf", None)
         e = d.documentElement
 
-        for k, v in sorted(self.__dict__.iteritems()):
+        for k, v in sorted(self.__dict__.items()):
             if k.startswith("_"): continue
             n = d.createElement('property')
             e.appendChild(n)
@@ -1022,11 +1022,11 @@ If you have a REALLY large config that you wish to convert to this newer version
             n.setAttribute('value', str(v))
         
         d.writexml(open(filename, "wb"), addindent="  ", newl="\n")
-        print "%s" % base
+        print("%s" % base)
 
         # write pncconf hidden preference file
         filename = os.path.expanduser("~/.pncconf-preferences")
-        print filename
+        print(filename)
         d2 = xml.dom.minidom.getDOMImplementation().createDocument(
                             None, "int-pncconf", None)
         e2 = d2.documentElement
@@ -1086,7 +1086,7 @@ If you have a REALLY large config that you wish to convert to this newer version
             #print "Setting TOUCHY preferences"
             templist = {"touchyabscolor":"abs_textcolor","touchyrelcolor":"rel_textcolor",
                         "touchydtgcolor":"dtg_textcolor","touchyerrcolor":"err_textcolor"}
-            for key,value in templist.iteritems():
+            for key,value in templist.items():
                 prefs.putpref(value, self[key], str)
             if self.touchyposition[0] or self.touchysize[0]:
                     pos = size = ""
@@ -1115,22 +1115,22 @@ Choosing no will mean AXIS options such as size/position and force maximum might
                     if self.axissize[0]:
                         size = "%dx%d"% (self.axissize[1],self.axissize[2])
                     geo = "%s%s"%(size,pos)
-                    print >>f1,"""root_window.tk.call("wm","geometry",".","%s")"""%(geo)
+                    print("""root_window.tk.call("wm","geometry",".","%s")"""%(geo), file=f1)
                 if self.axisforcemax:
                     #print "Setting AXIS forcemax option"
-                    print >>f1,"""# Find the largest size possible and set AXIS to it"""
-                    print >>f1,"""maxgeo=root_window.tk.call("wm","maxsize",".")"""
-                    print >>f1,"""try:"""
-                    print >>f1,"""   fullsize=maxgeo.split(' ')[0] + 'x' + maxgeo.split(' ')[1]"""
-                    print >>f1,"""except:"""
-                    print >>f1,"""   fullsize=str(maxgeo[0]) + 'x' + str(maxgeo[1])"""
-                    print >>f1,"""root_window.tk.call("wm","geometry",".",fullsize)"""
-                    print >>f1,"""# Uncomment for fullscreen"""
-                    print >>f1,"""#root_window.attributes('-fullscreen', True)"""
+                    print("""# Find the largest size possible and set AXIS to it""", file=f1)
+                    print("""maxgeo=root_window.tk.call("wm","maxsize",".")""", file=f1)
+                    print("""try:""", file=f1)
+                    print("""   fullsize=maxgeo.split(' ')[0] + 'x' + maxgeo.split(' ')[1]""", file=f1)
+                    print("""except:""", file=f1)
+                    print("""   fullsize=str(maxgeo[0]) + 'x' + str(maxgeo[1])""", file=f1)
+                    print("""root_window.tk.call("wm","geometry",".",fullsize)""", file=f1)
+                    print("""# Uncomment for fullscreen""", file=f1)
+                    print("""#root_window.attributes('-fullscreen', True)""", file=f1)
 
         # make system link and shortcut to pncconf files
         # see http://freedesktop.org/wiki/Software/xdg-user-dirs
-        desktop = commands.getoutput("""
+        desktop = subprocess.getoutput("""
             test -f ${XDG_CONFIG_HOME:-~/.config}/user-dirs.dirs && . ${XDG_CONFIG_HOME:-~/.config}/user-dirs.dirs
             echo ${XDG_DESKTOP_DIR:-$HOME/Desktop}""")
         if self.createsymlink:
@@ -1146,18 +1146,18 @@ Choosing no will mean AXIS options such as size/position and force maximum might
 
             filename = os.path.join(desktop, "%s.desktop" % self.machinename)
             file = open(filename, "w")
-            print >>file,"[Desktop Entry]"
-            print >>file,"Version=1.0"
-            print >>file,"Terminal=false"
-            print >>file,"Name=" + _("launch %s") % self.machinename
-            print >>file,"Exec=%s %s/%s.ini" \
-                         % ( scriptspath, base, self.machinename )
-            print >>file,"Type=Application"
-            print >>file,"Comment=" + _("Desktop Launcher for LinuxCNC config made by PNCconf")
-            print >>file,"Icon=%s"% _PD.LINUXCNCICON
+            print("[Desktop Entry]", file=file)
+            print("Version=1.0", file=file)
+            print("Terminal=false", file=file)
+            print("Name=" + _("launch %s") % self.machinename, file=file)
+            print("Exec=%s %s/%s.ini" \
+                         % ( scriptspath, base, self.machinename ), file=file)
+            print("Type=Application", file=file)
+            print("Comment=" + _("Desktop Launcher for LinuxCNC config made by PNCconf"), file=file)
+            print("Icon=%s"% _PD.LINUXCNCICON, file=file)
             file.close()
             # Ubuntu 10.04 require launcher to have execute permissions
-            os.chmod(filename,0775)
+            os.chmod(filename,0o775)
 
     def __getitem__(self, item):
         return getattr(self, item)
@@ -1298,10 +1298,10 @@ Choosing no will mean AXIS options such as size/position and force maximum might
                 # we iter over this dic because of locale translation problems when using
                 # comptype = type_name[ptype]
                 comptype = "ERROR FINDING COMPONENT TYPE"
-                for key,value in type_name.iteritems():
+                for key,value in type_name.items():
                     if key == ptype: comptype = value
                 if value == "Error":
-                    print "**** ERROR PNCCONF: pintype error in make_pinname: (sserial) ptype = ",ptype
+                    print("**** ERROR PNCCONF: pintype error in make_pinname: (sserial) ptype = ",ptype)
                     return None
                 # if gpionumber flag is true - convert to gpio pin name
                 if gpionumber or ptype in(_PD.GPIOI,_PD.GPIOO,_PD.GPIOD):
@@ -1331,7 +1331,7 @@ Choosing no will mean AXIS options such as size/position and force maximum might
                             comptype = "input"
                         return "hm2_%s.%d.%s.%d.%d."% (boardname,halboardnum,subboardname,portnum,channel) + comptype+"-%02d"% (pinnum)
                     else:
-                        print "**** ERROR PNCCONF: subboard name ",subboardname," in make_pinname: (sserial) ptype = ",ptype,pin
+                        print("**** ERROR PNCCONF: subboard name ",subboardname," in make_pinname: (sserial) ptype = ",ptype,pin)
                         return None
                 elif ptype in (_PD.AMP8I20,_PD.POTO,_PD.POTE,_PD.POTD) or prefixonly:
                     return "hm2_%s.%d.%s.%d.%d."% (boardname,halboardnum,subboardname,portnum,channel)
@@ -1348,7 +1348,7 @@ Choosing no will mean AXIS options such as size/position and force maximum might
                     comptype = "enc"
                     return "hm2_%s.%d.%s.%d.%d."% (boardname,halboardnum,subboardname,portnum,channel) + comptype+"%d"% (compnum)
                 else:
-                    print "**** ERROR PNCCONF: pintype error in make_pinname: (sserial) ptype = ",ptype,pin
+                    print("**** ERROR PNCCONF: pintype error in make_pinname: (sserial) ptype = ",ptype,pin)
                     return None
             else:
                 # sample pin name = mesa0c3pin1
@@ -1362,10 +1362,10 @@ Choosing no will mean AXIS options such as size/position and force maximum might
                         if i == connum:
                             dummy,compnum = self["mesa%d_currentfirmwaredata"% (boardnum)][_PD._STARTOFDATA+pinnum+(concount*24)]
                             break
-                for key,value in type_name.iteritems():
+                for key,value in type_name.items():
                     if key == ptype: comptype = value
                 if value == "Error":
-                    print "**** ERROR PNCCONF: pintype error in make_pinname: (mesa) ptype = ",ptype
+                    print("**** ERROR PNCCONF: pintype error in make_pinname: (mesa) ptype = ",ptype)
                     return None
                 # if gpionumber flag is true - convert to gpio pin name
                 if gpionumber or ptype in(_PD.GPIOI,_PD.GPIOO,_PD.GPIOD):
@@ -1390,32 +1390,32 @@ Choosing no will mean AXIS options such as size/position and force maximum might
                     return "hm2_%s.%d."% (boardname,halboardnum) + comptype+".%02d"% ((compnum * 2 + num))
 
         elif 'pp' in test:
-            print test
+            print(test)
             ending = "-out"
             test = str(pin) 
-            print  self[pin]
+            print(self[pin])
             pintype = str(test[4:5])
-            print pintype
+            print(pintype)
             pinnum = int(test[8:])
-            print pinnum
+            print(pinnum)
             connum = int(test[2:3])-1
-            print connum
+            print(connum)
             if pintype == 'I': ending = "-in"
             return "parport."+str(connum)+".pin-%02d"%(pinnum)+ending
         else:
-            print "pintype error in make_pinname: pinname = ",test
+            print("pintype error in make_pinname: pinname = ",test)
             return None
 
 class App:
     def __init__(self, dbgstate=0):
-        print dbgstate
+        print(dbgstate)
         global debug
         global dbg
         global _PD
         self.debugstate = dbgstate
         dbg = self.dbg
         if self.debugstate:
-           print 'PNCconf debug',dbgstate
+           print('PNCconf debug',dbgstate)
            global _DEBUGSTRING
            _DEBUGSTRING = [dbgstate]
         self.recursive_block = False
@@ -1516,15 +1516,15 @@ class App:
                 if name == "EXTRA_MESA_FIRMWAREDATA":
                     self.d._customfirmwarefilename = text
                     rcfile = os.path.expanduser(self.d._customfirmwarefilename)
-                    print rcfile
+                    print(rcfile)
                     if os.path.exists(rcfile):
                         try:
-                            execfile(rcfile)
+                            exec(compile(open(rcfile).read(), rcfile, 'exec'))
                         except:
-                            print _("**** PNCCONF ERROR:    custom firmware loading error")
+                            print(_("**** PNCCONF ERROR:    custom firmware loading error"))
                             self._p.EXTRA_MESA_FIRMWAREDATA = []
                     if not self._p.EXTRA_MESA_FIRMWAREDATA == []:
-                        print _("**** PNCCONF INFO:    Found extra firmware in file")
+                        print(_("**** PNCCONF INFO:    Found extra firmware in file"))
         # these are set from the hidden preference file
         self.widgets.createsymlink.set_active(link)
         self.widgets.createshortcut.set_active(short)
@@ -1608,7 +1608,7 @@ class App:
             if "all" in hint or mtype in hint:
                 print(message)
                 if "step" in _DEBUGSTRING:
-                    c = raw_input(_("\n**** Debug Pause! ****"))
+                    c = input(_("\n**** Debug Pause! ****"))
                 return
 
     def query_dialog(self,title, message):
@@ -1680,7 +1680,7 @@ class App:
         gdkcr.paint ()
 
     def print_image(self,image_name):
-        print 'print image'
+        print('print image')
         print_dialog = gtk.PrintOperation()
         print_dialog.set_n_pages(1)
         settings = gtk.PrintSettings()
@@ -2061,10 +2061,10 @@ PNCconf will use internal firmware data"%self._p.FIRMDIR),True)
                     i = len(self.d["mesa%d_currentfirmwaredata"% boardnum][_PD._NUMOFCNCTRS])
                     j = self.d["mesa%d_currentfirmwaredata"% boardnum][_PD._HIFREQ]+100 # throws an error if not an integer.
                     if not i > 1:
-                        print i,j,boardnum
+                        print(i,j,boardnum)
                         raise UserWarning
             except :
-                print i,j,boardnum
+                print(i,j,boardnum)
                 self.warning_dialog(_("It seems data in this file is from too old of a version of PNCConf to continue.\n."),True)
                 return True
         else:
@@ -2117,31 +2117,31 @@ PNCconf will use internal firmware data"%self._p.FIRMDIR),True)
 
             text = search(('boardname','BOARDNAME'))
             if text == None:
-                print 'Missing info: boardname'
+                print('Missing info: boardname')
                 return
             boardname = text.lower()
             #dbg("\nBoard and firmwarename:  %s %s\n"%( boardname, firmname), "firmraw")
 
             text  = search(("IOPORTS","ioports")) ; #print numcnctrs
             if text == None:
-                print 'Missing info: ioports'
+                print('Missing info: ioports')
                 return
             numcnctrs = int(text)
             text = search(("PORTWIDTH","portwidth"))
             if text == None:
-                print 'Missing info: portwidth'
+                print('Missing info: portwidth')
                 return
             portwidth = int(text)
             maxgpio  = numcnctrs * portwidth ; #print maxgpio
             placeholders = 24-portwidth
             text = search(("CLOCKLOW","clocklow")) ; #print lowfreq
             if text == None:
-                print 'Missing info: clocklow'
+                print('Missing info: clocklow')
                 return
             lowfreq = int(text)/1000000
             text = search(("CLOCKHIGH","clockhigh")); #print hifreq
             if text == None:
-                print 'Missing info: clockhigh'
+                print('Missing info: clockhigh')
                 return
             hifreq = int(text)/1000000
             modules = root.findall(".//modules")[0]
@@ -2156,7 +2156,7 @@ PNCconf will use internal firmware data"%self._p.FIRMDIR),True)
                     driver = 'hm2_pci'
             for i,j in enumerate(modules):
                 k = modules[i].find("tagname").text
-                print k
+                print(k)
                 if k in ("Watchdog","WatchDog","WATCHDOG"): 
                     l = modules[i].find("numinstances").text;#print l,k
                     watchdog = int(l)
@@ -2189,7 +2189,7 @@ PNCconf will use internal firmware data"%self._p.FIRMDIR),True)
                 elif k in ("IOPort","AddrX","MuxedQCountSel"):
                     continue
                 else:
-                    print "**** WARNING: Pncconf parsing firmware: tagname (%s) not reconized"% k
+                    print("**** WARNING: Pncconf parsing firmware: tagname (%s) not reconized"% k)
 
             discov_sserial = []
             ssname = root.findall("SSERIALDEVICES/SSERIALFUNCTION")
@@ -2198,7 +2198,7 @@ PNCconf will use internal firmware data"%self._p.FIRMDIR),True)
                 dev = i.find("DEVICE").text
                 chan = i.find("CHANNEL").text
                 discov_sserial.append((int(port),int(chan),dev))
-            print 'discovered sserial:', discov_sserial
+            print('discovered sserial:', discov_sserial)
 
             pins = root.findall(".//pins")[0]
             temppinlist = []
@@ -2266,7 +2266,7 @@ PNCconf will use internal firmware data"%self._p.FIRMDIR),True)
                             founddevice = temp.text.upper()
                         else:
                             founddevice = None
-                        print tempfunc,founddevice
+                        print(tempfunc,founddevice)
                         # this auto selects the sserial 7i76 mode 0 card for sserial 0 and 2
                         # as the 5i25/7i76 uses some of the sserial channels for it's pins.
                         if boardname in ("5i25","7i92"):
@@ -2306,10 +2306,10 @@ PNCconf will use internal firmware data"%self._p.FIRMDIR),True)
                     is_gpio = True
                     exc_type, exc_value, exc_traceback = sys.exc_info()
                     formatted_lines = traceback.format_exc().splitlines()
-                    print
-                    print "****pncconf verbose XML parse debugging:",formatted_lines[0]
+                    print()
+                    print("****pncconf verbose XML parse debugging:",formatted_lines[0])
                     traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
-                    print formatted_lines[-1]
+                    print(formatted_lines[-1])
 
                 if is_gpio:
                     # must be GPIO pins if there is no secondary mudule name
@@ -2363,17 +2363,17 @@ PNCconf will use internal firmware data"%self._p.FIRMDIR),True)
                 temp.append(i)
             if "5i25" in boardname :
                 dbg("5i25 firmware:\n%s\n"%( temp), mtype="5i25")
-            print 'firm added:\n',temp
+            print('firm added:\n',temp)
             return temp
 
     def discover_mesacards(self):
         name = self.query_dialog('Discovery Search','Specify device name')
         if name is None: return
-        print 'try to discover board:',name
+        print('try to discover board:',name)
         if not name:
             name = '5i25'
         info = self.call_mesaflash(name)
-        print 'INFO:',info,'<-'
+        print('INFO:',info,'<-')
         if info is None: return None
         lines = info.splitlines()
         try:
@@ -2389,12 +2389,12 @@ PNCconf will use internal firmware data"%self._p.FIRMDIR),True)
         if 'No' in lines[0] and 'board found' in lines[0] :
             text = _("No board was found\n")
             self.warning_dialog(text,True)
-            print 'OOPS no board found!'
+            print('OOPS no board found!')
             return None
         return info
 
     def call_mesaflash(self, devicename):
-        print 'DEVICE NAME SPECIFIED',devicename
+        print('DEVICE NAME SPECIFIED',devicename)
         # 7i43 needs it's firmware loaded before it can be 'discovered'
         if '7i43' in devicename.lower():
             devicename = '7i43 --epp'
@@ -2425,7 +2425,7 @@ PNCconf will use internal firmware data"%self._p.FIRMDIR),True)
         except:
             text = _("Discovery is  unavailable\n")
             self.warning_dialog(text,True)
-        print 'cmd=',cmd
+        print('cmd=',cmd)
         return output
 
     def parse_discovery(self,info,boardnum=0):
@@ -2560,7 +2560,7 @@ PNCconf will use internal firmware data"%self._p.FIRMDIR),True)
                     n1 = add_element(ELEMENT,'pins')
                     pinsflag = False
                 CON = temp2[3]
-                print CON
+                print(CON)
                 for num in range(l_num+3,l_num+3+int(NUMCONPINS)):
                     CHAN = PINFNCTN = ''
                     pin_line = ' '.join(lines[num].split()).split()
@@ -2578,9 +2578,9 @@ PNCconf will use internal firmware data"%self._p.FIRMDIR),True)
                         if PINFNCTN in("TXDATA1","TXDATA2","TXDATA3",
                             "TXDATA4","TXDATA5","TXDATA6","TXDATA7","TXDATA8"):
                             num = int(PINFNCTN[6])-1
-                            print num
+                            print(num)
                             for idnum,dev in sserial:
-                                print idnum,dev,num
+                                print(idnum,dev,num)
                                 if int(idnum) == num:
                                     NEW_FNCTN = '%s-%d'% (dev,num)
                                     add_text(n2,'foundsserialdevice',NEW_FNCTN)
@@ -2589,11 +2589,11 @@ PNCconf will use internal firmware data"%self._p.FIRMDIR),True)
                     else:
                         add_text(n2,'secondaryfunctionname','NOT USED')
                     
-                    print '    I/O ',IO, ' function ',SECFNCTN,' CHANNEL:',CHAN,'PINFUNCTION:',PINFNCTN
+                    print('    I/O ',IO, ' function ',SECFNCTN,' CHANNEL:',CHAN,'PINFUNCTION:',PINFNCTN)
 
-        print 'Sserial CARDS FOUND:',sserial
-        print NUMCONS,NUMCONPINS,ENCODERS,MUXENCODERS,SSERIALPORTS,NUMSSCHANNELS
-        print RESOLVERS,PWMGENS,LEDS
+        print('Sserial CARDS FOUND:',sserial)
+        print(NUMCONS,NUMCONPINS,ENCODERS,MUXENCODERS,SSERIALPORTS,NUMSSCHANNELS)
+        print(RESOLVERS,PWMGENS,LEDS)
         firmname = "~/mesa%d_discovered.xml"%boardnum
         filename = os.path.expanduser(firmname)
         DOC.writexml(open(filename, "wb"), addindent="  ", newl="\n")
@@ -2651,8 +2651,8 @@ PNCconf will use internal firmware data"%self._p.FIRMDIR),True)
             text.append("adding a general rule first\nso your device will be found\n")
             filename = os.path.join(sourcefile, "LINUXCNCtempGeneral.rules")
             file = open(filename, "w")
-            print >>file, ("# This is a rule for LinuxCNC's hal_input\n")
-            print >>file, ("""SUBSYSTEM="input", MODE="0660", GROUP="plugdev" """) 
+            print(("# This is a rule for LinuxCNC's hal_input\n"), file=file)
+            print(("""SUBSYSTEM="input", MODE="0660", GROUP="plugdev" """), file=file)
             file.close()
             p=os.popen("gksudo cp  %sLINUXCNCtempGeneral.rules /etc/udev/rules.d/50-LINUXCNC-general.rules"% sourcefile )
             time.sleep(.1)
@@ -2705,9 +2705,9 @@ PNCconf will use internal firmware data"%self._p.FIRMDIR),True)
             if not self.warning_dialog("\n".join(text),False):return
             tempname = sourcefile+"LINUXCNCtempspecific.rules"
             file = open(tempname, "w")
-            print >>file, ("# This is a rule for LINUXCNC's hal_input\n")
-            print >>file, ("# For devicename=%s\n"% name)
-            print >>file, ("""SYSFS{idProduct}=="%s", SYSFS{idVendor}=="%s", MODE="0660", GROUP="plugdev" """%(product,vendor)) 
+            print(("# This is a rule for LINUXCNC's hal_input\n"), file=file)
+            print(("# For devicename=%s\n"% name), file=file)
+            print(("""SYSFS{idProduct}=="%s", SYSFS{idVendor}=="%s", MODE="0660", GROUP="plugdev" """%(product,vendor)), file=file)
             file.close()
             # remove illegal filename characters
             for i in ("(",")"):
@@ -2782,7 +2782,7 @@ PNCconf will use internal firmware data"%self._p.FIRMDIR),True)
         # This reads the Touchy preference file directly
         tempdict = {"touchyabscolor":"abs_textcolor","touchyrelcolor":"rel_textcolor",
                     "touchydtgcolor":"dtg_textcolor","touchyerrcolor":"err_textcolor"}
-        for key,value in tempdict.iteritems():
+        for key,value in tempdict.items():
             data = prefs.getpref(value, 'default', str)
             if data == "default":
                 self.widgets[key].set_active(False)
@@ -3165,7 +3165,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
     def on_mesa_firmware_changed(self, widget,boardnum):
         if self.firmware_block:
             return
-        print "**** INFO firmware %d changed"% boardnum
+        print("**** INFO firmware %d changed"% boardnum)
         model = self.widgets["mesa%d_boardtitle"% boardnum].get_model()
         active = self.widgets["mesa%d_boardtitle"% boardnum].get_active()
         if active < 0:
@@ -3367,7 +3367,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
                 # this suppresses errors because of unused and uninitialized sserial instances
                 elif pintype == None and "sserial" in ptype: return
                 else :
-                    print "**** ERROR mesa-data-transfer: error unknown pin type:",pintype,"of ",ptype
+                    print("**** ERROR mesa-data-transfer: error unknown pin type:",pintype,"of ",ptype)
                     return
                 
                 # **Start widget to data Convertion**                    
@@ -3380,7 +3380,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
                         selection = self.widgets[p].get_active_text()
                         piter = self.widgets[p].get_active_iter()
                         if piter == None:
-                            print "****ERROR PNCCONF: no custom name available"
+                            print("****ERROR PNCCONF: no custom name available")
                             return
                         #print "found signame -> ",selection," "
                 # ok we have a piter with a signal type now- lets convert it to a signalname
@@ -3458,7 +3458,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
                         display = 2
                         relatedliststore = self.d._udmrelatedliststore
                         controlliststore = self.d._udmcontrolliststore
-                    else:print "**** WARNING PNCCONF: pintype error-PWM type not found";return
+                    else:print("**** WARNING PNCCONF: pintype error-PWM type not found");return
                     self.widgets[ptype].handler_block(self.d[ptypeblocksignal])
                     self.widgets[ptype].set_model(controlliststore)
                     self.widgets[ptype].set_active(display)
@@ -3476,7 +3476,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
                         self.widgets[relatedptype].set_model(relatedliststore)
                         self.widgets[relatedptype].set_active(j)
                         self.widgets[relatedptype].handler_unblock(self.d[ptypeblocksignal])
-                else: print "**** WARNING PNCCONF: pintype error in pintypechanged method new ",new,"    pinnumber ",p
+                else: print("**** WARNING PNCCONF: pintype error in pintypechanged method new ",new,"    pinnumber ",p)
 
     def on_mesa_component_value_changed(self, widget,boardnum):
         self.in_mesa_prepare = True
@@ -3973,12 +3973,12 @@ Clicking 'existing custom program' will aviod this warning. "),False):
                                     self.widgets[p].set_sensitive(0)
                                 self.d[ptype] = firmptype
                             else:
-                                print 'found a sserial channel'
+                                print('found a sserial channel')
                                 ssdevice = self.d["mesa%d_currentfirmwaredata"% boardnum][_PD._SSDEVICES]
                                 for port,channel,device in (ssdevice):
-                                    print port,channel,device,channelnum
+                                    print(port,channel,device,channelnum)
                                     if port == 0 and channel+1 == channelnum:
-                                        print 'configure for: %s device'% device
+                                        print('configure for: %s device'% device)
                                         if '7I64' in device:
                                             if not '7i64' in self.d[p]:
                                                 self.d[p] = _PD.I7I64_T
@@ -4197,7 +4197,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
                     try:
                         signalindex = _PD.hal_resolver_input_names.index(datap)
                     except:
-                        if debug: print "**** INFO: PNCCONF warning no resolver signal named: %s\n     found for pin %s"% (datap ,p)
+                        if debug: print("**** INFO: PNCCONF warning no resolver signal named: %s\n     found for pin %s"% (datap ,p))
                         signalindex = 0
                     #print "dataptype:",self.d[ptype]," dataptype:",self.d[p],signalindex
                     count = 0
@@ -4230,7 +4230,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
                     try:
                         signalindex = _PD.hal_8i20_input_names.index(datap)
                     except:
-                        if debug: print "**** INFO: PNCCONF warning no 8i20 signal named: %s\n     found for pin %s"% (datap ,p)
+                        if debug: print("**** INFO: PNCCONF warning no 8i20 signal named: %s\n     found for pin %s"% (datap ,p))
                         signalindex = 0
                     #print "dataptype:",self.d[ptype]," dataptype:",self.d[p],signalindex
                     count = 0
@@ -4264,7 +4264,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
                     try:
                         signalindex = _PD.hal_pot_output_names.index(datap)
                     except:
-                        if debug: print "**** INFO: PNCCONF warning no potentiometer signal named: %s\n     found for pin %s"% (datap ,p)
+                        if debug: print("**** INFO: PNCCONF warning no potentiometer signal named: %s\n     found for pin %s"% (datap ,p))
                         signalindex = 0
                     #print "dataptype:",self.d[ptype]," dataptype:",self.d[p],signalindex
                     count = -1
@@ -4297,7 +4297,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
                     try:
                         signalindex = _PD.hal_analog_input_names.index(datap)
                     except:
-                        if debug: print "**** INFO: PNCCONF warning no analog in signal named: %s\n     found for pin %s"% (datap ,p)
+                        if debug: print("**** INFO: PNCCONF warning no analog in signal named: %s\n     found for pin %s"% (datap ,p))
                         signalindex = 0
                     #print "dataptype:",self.d[ptype]," dataptype:",self.d[p],signalindex
                     count = 0
@@ -4351,7 +4351,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
                     try:
                         signalindex = _PD.hal_tppwm_output_names.index(datap)
                     except:
-                        if debug: print "**** INFO: PNCCONF warning no THREE PWM signal named: %s\n     found for pin %s"% (datap ,p)
+                        if debug: print("**** INFO: PNCCONF warning no THREE PWM signal named: %s\n     found for pin %s"% (datap ,p))
                         signalindex = 0
                     #print "3 PWw ,dataptype:",self.d[ptype]," dataptype:",self.d[p],signalindex
                     temp = (0) # set unused stepper
@@ -4403,7 +4403,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
                     try:
                         signalindex = _PD.hal_sserial_names.index(self.d[p])
                     except:
-                        if debug: print "**** INFO: PNCCONF warning no SMART SERIAL signal named: %s\n     found for pin %s"% (datap ,p)
+                        if debug: print("**** INFO: PNCCONF warning no SMART SERIAL signal named: %s\n     found for pin %s"% (datap ,p))
                         signalindex = 0
                     
                     pinmodel = self.widgets[p].get_model()
@@ -4414,7 +4414,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
                                 treeiter = pinmodel.get_iter(row)
                                 self.widgets[p].set_active_iter(treeiter)
                 else:
-                    print "**** WARNING: PNCCONF data to widget: ptype not recognized/match:",dataptype,widgetptype
+                    print("**** WARNING: PNCCONF data to widget: ptype not recognized/match:",dataptype,widgetptype)
 
     # This is for when a user picks a signal name or creates a custom signal (by pressing enter)
     # if searches for the 'related pins' of a component so it can update them too
@@ -4605,7 +4605,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
                                     self.d[BASE+"subboard"] = "7i73-m1"
                                     self.widgets[BASE+'_tablabel'].set_text("7I73 I/O\n (SS# %d)"% channelnum)
                                 elif "7i77" in temp:
-                                    print 'ssname',temp,'sschannel#',channelnum
+                                    print('ssname',temp,'sschannel#',channelnum)
                                     if 'Mode 3' in temp:
                                         ssfirmname = "7i77-m3"
                                     else:
@@ -4621,7 +4621,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
                                         table = BASE+"table1"
                                         self.widgets[table].hide()
                                 elif "7i84" in temp:
-                                    print 'ssname',temp,'sschannel#',channelnum
+                                    print('ssname',temp,'sschannel#',channelnum)
                                     if 'Mode 3' in temp:
                                         ssfirmname = "7i84-m3"
                                     else:
@@ -4663,7 +4663,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
                     self.p.set_buttons_sensitive(1,1)
                     return
                 else:
-                    print"**** INFO: pncconf on_general_pin_changed:  pintype not found:%s\n"% widgetptype
+                    print("**** INFO: pncconf on_general_pin_changed:  pintype not found:%s\n"% widgetptype)
                     self.p.set_buttons_sensitive(1,1)
                     return   
                 # *** change the related pin's signal names ***
@@ -4720,7 +4720,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
                 if custom:
                     legal_name = pinchanged.replace(" ","_")
                     addsignalto.append ((legal_name))
-                    print "add: "+legal_name+" to human list",humansignallist[customindex][1]
+                    print("add: "+legal_name+" to human list",humansignallist[customindex][1])
                     humansignallist[customindex][1].append ((legal_name))
                     endoftree = len(basetree)-1
                     customiter = basetree.get_iter((endoftree,))
@@ -4800,7 +4800,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
                 signalindex = signal.index(datap)
             except:
                 signalindex = 0
-                print "**** INFO: PNCCONF warning no GPIO signal named: %s\n       found for pin %s"% (datap , p)
+                print("**** INFO: PNCCONF warning no GPIO signal named: %s\n       found for pin %s"% (datap , p))
             #print "gpio temp ptype:",pinname,datap,signalindex
             count = 0
             temp = (0) # set unused gpio if no match
@@ -5760,7 +5760,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
         for test in ("s-stepgen-step", "s-pwm-pulse", "s-encoder-a", "spindle-on", "spindle-cw", "spindle-ccw", "spindle-brake",
                     "s-pot-output"):
             has_spindle = self.d.findsignal(test)
-            print test,has_spindle
+            print(test,has_spindle)
             if has_spindle:
                 return True
         if self.d.serial_vfd and (self.d.mitsub_vfd or self.d.gs2_vfd):
@@ -5846,12 +5846,12 @@ Clicking 'existing custom program' will aviod this warning. "),False):
                     self.d[pinname] = False
 
     def debug_iter(self,test,testwidget,message=None):
-        print "#### DEBUG :",message
+        print("#### DEBUG :",message)
         for i in ("_gpioosignaltree","_gpioisignaltree","_steppersignaltree","_encodersignaltree","_muxencodersignaltree",
                     "_pwmcontrolsignaltree","_pwmrelatedsignaltree","_tppwmsignaltree",
                     "_gpioliststore","_encoderliststore","_muxencoderliststore","_pwmliststore","_tppwmliststore"):
             modelcheck = self.widgets[testwidget].get_model()
-            if modelcheck == self.d[i]:print i;break
+            if modelcheck == self.d[i]:print(i);break
 
 #********************
 # Common Helper functions
@@ -5860,7 +5860,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
     def tandem_check(self, letter):
         tandem_stepper = self.d.make_pinname(self.stepgen_sig("%s2"%letter))
         tandem_pwm = self.d.make_pinname(self.pwmgen_sig("%s2"%letter))
-        print letter, bool(tandem_stepper or tandem_pwm), tandem_stepper, tandem_pwm
+        print(letter, bool(tandem_stepper or tandem_pwm), tandem_stepper, tandem_pwm)
         return bool(tandem_stepper or tandem_pwm)
 
     def stepgen_sig(self, axis):
@@ -5924,7 +5924,7 @@ Clicking 'existing custom program' will aviod this warning. "),False):
            return test
 
     def pwmgen_invert_pins(self,pinnumber):
-        print "list pwm invert pins",pinnumber
+        print("list pwm invert pins",pinnumber)
         # sample pinname = mesa0c0pin11
         signallist = []
         pin = int(pinnumber[10:])
@@ -5932,11 +5932,11 @@ Clicking 'existing custom program' will aviod this warning. "),False):
         boardnum = int(pinnumber[4:5])
         channel = None
         pinlist = self.d.list_related_pins([_PD.PWMP, _PD.PWMD, _PD.PWME], boardnum, connector, channel, pin, 0)
-        print pinlist
+        print(pinlist)
         for i in pinlist:
             if self.d[i[0]+"inv"]:
                 gpioname = self.d.make_pinname(self.d.findsignal( self.d[i[0]] ),True)
-                print gpioname
+                print(gpioname)
                 signallist.append(gpioname)
         return signallist
 
@@ -5974,10 +5974,10 @@ Clicking 'existing custom program' will aviod this warning. "),False):
     def show_try_errors(self):
             exc_type, exc_value, exc_traceback = sys.exc_info()
             formatted_lines = traceback.format_exc().splitlines()
-            print
-            print "****Pncconf verbose debugging:",formatted_lines[0]
+            print()
+            print("****Pncconf verbose debugging:",formatted_lines[0])
             traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
-            print formatted_lines[-1]
+            print(formatted_lines[-1])
 
     def hostmot2_command_string(self):
             # mesa stuff
