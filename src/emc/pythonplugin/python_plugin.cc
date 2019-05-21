@@ -27,6 +27,8 @@
 #include <boost/python/exec.hpp>
 #include <boost/python/extract.hpp>
 #include <boost/python/import.hpp>
+#include <boost/python/dict.hpp>
+#include <boost/filesystem.hpp>
 
 namespace bp = boost::python;
 
@@ -57,17 +59,59 @@ extern const char *strstore(const char *s);
 // execfile instead.
 // The bug was introduced at https://github.com/boostorg/python/commit/fe24ab9dd5440562e27422cd38f7de03356bfd16
 bp::object working_execfile(const char *filename, bp::object globals, bp::object locals) {
-    return bp::import("__builtin__").attr("execfile")(filename, globals, locals);
+
+//#if PYTHON_MAJOR_VERSION >= 3 
+  try
+  {
+      boost::filesystem::path p(filename);
+    // If path is /Users/whatever/blah/foo.py
+    bp::dict locals;
+    locals["modulename"] = p.stem().string(); // foo -> module name
+    locals["path"]   = p.native(); // /Users/whatever/blah/foo.py
+    bp:exec("import importlib.machinery"
+            "import importlib.util"
+            "loader = importlib.machinery.SourceFileLoader(modulename, path)"
+            "spec = importlib.util.spec_from_loader(loader.name, loader)"
+            "mod = importlib.util.module_from_spec(spec)"
+            "loader.exec_module(mod)", globals, locals);
+    bp::object retval = locals["mod"];
+
+    PyErr_Print();
+    //::handle<> handle(locals["newmodule"]);
+    //boost::python object(handle);
+    //_PyObject_Dump(locals["newmodule"]);
+    return retval;
+    //return locals["newmodule"];
+    //eturn locals["newmod"];
+  }
+  catch( bp::error_already_set )
+  {
+      PyErr_Print();
+      //bp::error(bp::handle_exception());
+    return bp::object();
+  }
+
+
+
+
+//    return bp::import("__builtin__").attr("execfile")(filename, globals, locals);
+//#else
+//    return bp::import("__builtin__").attr("execfile")(filename, globals, locals);
+//#endif
 }
 
 int PythonPlugin::run_string(const char *cmd, bp::object &retval, bool as_file)
 {
     reload();
     try {
-	if (as_file)
+	if (as_file) {
 	    retval = working_execfile(cmd, main_namespace, main_namespace);
-	else
+
+    //retval = bp::exec_file(cmd, main_namespace, main_namespace);
+    }
+	else {
 	    retval = bp::exec(cmd, main_namespace, main_namespace);
+    }
 	status = PLUGIN_OK;
     }
     catch (bp::error_already_set) {
@@ -139,8 +183,9 @@ int PythonPlugin::call(const char *module, const char *callable,
 
 	// this does
 	PyObject *rv = PyObject_Call(function.ptr(), tupleargs.ptr(), kwargs.ptr());
-	if (PyErr_Occurred()) 
-	    bp::throw_error_already_set();
+	if (PyErr_Occurred()) {
+        PyErr_Print();
+	    bp::throw_error_already_set();}
 	if (rv) 
 	    retval = bp::object(bp::borrowed(rv));
 	else
@@ -240,6 +285,7 @@ std::string handle_pyerror()
     bp::object formatted_list, formatted;
 
     PyErr_Fetch(&exc, &val, &tb);
+    PyErr_NormalizeException(&exc,&val,&tb);
     bp::handle<> hexc(exc), hval(bp::allow_null(val)), htb(bp::allow_null(tb));
     bp::object traceback(bp::import("traceback"));
     if (!tb) {
@@ -265,12 +311,14 @@ int PythonPlugin::initialize()
 		main_namespace[inittab_entries[i]] = bp::import(inittab_entries[i].c_str());
 	    }
 	    if (toplevel) // only execute a file if there's one configured.
-		bp::object result = working_execfile(abs_path,
+        bp::object result = working_execfile(abs_path,
 						  main_namespace,
 						  main_namespace);
+        //bp::object result = bp::exec_file(abs_path,main_namespace,main_namespace);
 	    status = PLUGIN_OK;
 	}
 	catch (bp::error_already_set) {
+        PyErr_Print();
 	    if (PyErr_Occurred()) {
 		exception_msg = handle_pyerror();
 	    } else
@@ -290,6 +338,13 @@ int PythonPlugin::initialize()
     return status;
 }
 
+wchar_t *nstrws_convert(char *raw) {
+  wchar_t *rtn = (wchar_t *) calloc(1, (sizeof(wchar_t) * (strlen(raw) + 1)));
+  setlocale(LC_ALL,"en_US.UTF-8"); // Unless you do this python 3 crashes.
+  mbstowcs(rtn, raw, strlen(raw));
+  return rtn;
+}
+
 PythonPlugin::PythonPlugin(struct _inittab *inittab) :
     status(0),
     module_mtime(0),
@@ -298,7 +353,18 @@ PythonPlugin::PythonPlugin(struct _inittab *inittab) :
     abs_path(0),
     log_level(0)
 {
+#if PY_MAJOR_VERSION >=3
+    //const wchar_t *_program_name = nstrws_convert(abs_path);
+    
+    if (abs_path){
+        wchar_t *program = Py_DecodeLocale(abs_path, NULL);
+    //fprintf(stderr, program);
+    //if (strlen(program) > 0) {
+        Py_SetProgramName(program);
+    }
+#else
     Py_SetProgramName((char *) abs_path);
+#endif
 
     if ((inittab != NULL) &&
 	PyImport_ExtendInittab(inittab)) {
