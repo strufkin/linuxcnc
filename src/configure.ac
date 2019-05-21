@@ -94,7 +94,7 @@ AS_IF([test "x$ac_cv_boost_python" = xyes],
     LIBS="$saved_LIBS -l$LIBPYTHON -l$ax_lib"
     AC_LINK_IFELSE(
       [AC_LANG_PROGRAM([[#include <boost/python/object_fwd.hpp>]], [[boost::python::object *test_object;]])],
-      [BOOST_PYTHON_LIBS="-l$ax_lib"; break])
+      [BOOST_PYTHON_LIBS="-l$ax_lib -lboost_filesystem"; break])
   done
   AS_IF([test "x$BOOST_PYTHON_LIBS" != x], [ax_result=$BOOST_PYTHON_LIBS], [ax_result=])
   AC_MSG_RESULT([$ax_result])
