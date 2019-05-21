@@ -400,13 +400,23 @@ int return_int(const char *funcname, PyObject *retval)
 	return -1;
     }
     if ((retval != Py_None) &&
+#if PY_MAJOR_VERSION >=3
+    (PyLong_Check(retval))) {
+    return PyLong_AsLong(retval);
+#else
 	(PyInt_Check(retval))) {
 	return PyInt_AS_LONG(retval);
+#endif
     } else {
 	emcOperatorError(0, "return_int(%s): expected int return value, got '%s' (%s)",
 			 funcname,
+#if PY_MAJOR_VERSION >=3
+             PyBytes_AsString(retval),
+             Py_TYPE(retval)->tp_name);
+#else
 			 PyString_AsString(retval),
 			 retval->ob_type->tp_name);
+#endif
 	Py_XDECREF(retval);
 	return -1;
     }
@@ -436,13 +446,18 @@ int emcPluginCall(EMC_EXEC_PLUGIN_CALL *call_msg)
 //     return status;
 // }
 
-extern "C" void initemctask();
-extern "C" void initinterpreter();
-extern "C" void initemccanon();
+extern "C" PyObject* PyInit_emctask(void);
+extern "C" PyObject* PyInit_interpreter(void);
+extern "C" PyObject* PyInit_emccanon(void);
+extern "C" struct _inittab builtin_modules[];
+
+//extern "C" void initemctask();
+//extern "C" void initinterpreter();
+//extern "C" void initemccanon();
 struct _inittab builtin_modules[] = {
-    { (char *) "interpreter", initinterpreter },
-    { (char *) "emccanon", initemccanon },
-    { (char *) "emctask", initemctask },
+    { "interpreter", PyInit_interpreter },
+    { "emccanon", PyInit_emccanon },
+    { "emctask", PyInit_emctask },
     // any others...
     { NULL, NULL }
 };
