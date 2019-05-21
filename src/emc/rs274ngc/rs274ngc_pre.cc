@@ -134,31 +134,21 @@ Interp::Interp()
     try {
 	// this import will register the C++->Python converter for Interp
 	bp::object interp_module = bp::import("interpreter");
-if (PyErr_Occurred()) PyErr_Print();	
-    printf("interpreter bp::importred\n");	
 	// use a boost::cref to avoid per-call instantiation of the
 	// Interp Python wrapper (used for the 'self' parameter in handlers)
 	// since interp.init() may be called repeatedly this would create a new
 	// wrapper instance on every init(), abandoning the old one and all user attributes
 	// tacked onto it, so make sure this is done exactly once
 	_setup.pythis = new boost::python::object(boost::cref(*this));
-if (PyErr_Occurred()) PyErr_Print();	
-    printf("interpreter bp::importred2\n");	
 	// alias to 'interpreter.this' for the sake of ';py, .... ' comments
 	// besides 'this', eventually use proper instance names to handle
 	// several instances 
 	bp::scope(interp_module).attr("this") =  *_setup.pythis;
 
-if (PyErr_Occurred()) PyErr_Print();	
-    printf("interpreter bp::importred3\n");	
 	// make "this" visible without importing interpreter explicitly
 	bp::object retval;
 	python_plugin->run_string("import interpreter", retval, false);
-if (PyErr_Occurred()) PyErr_Print();	
-    printf("interpreter bp::importred4\n");	
 	python_plugin->run_string("from interpreter import this\nprint(dir(this))\n", retval, false);
-if (PyErr_Occurred()) PyErr_Print();	
-    printf("interpreter bp::importred5\n");	
     }
     catch (bp::error_already_set) {
 	std::string exception_msg;
