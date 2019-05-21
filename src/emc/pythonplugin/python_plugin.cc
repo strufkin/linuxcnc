@@ -61,25 +61,24 @@ extern const char *strstore(const char *s);
 bp::object working_execfile(const char *filename, bp::object globals, bp::object locals) {
 
 //#if PYTHON_MAJOR_VERSION >= 3 
-  try
+/*  try
   {
       boost::filesystem::path p(filename);
     // If path is /Users/whatever/blah/foo.py
     bp::dict locals;
     locals["modulename"] = p.stem().string(); // foo -> module name
     locals["path"]   = p.native(); // /Users/whatever/blah/foo.py
-    bp:exec("import importlib.machinery"
-            "import importlib.util"
-            "loader = importlib.machinery.SourceFileLoader(modulename, path)"
-            "spec = importlib.util.spec_from_loader(loader.name, loader)"
-            "mod = importlib.util.module_from_spec(spec)"
-            "loader.exec_module(mod)", globals, locals);
+    bp::exec("import importlib.machinery\n"
+            "import importlib.util\n"
+            "loader = importlib.machinery.SourceFileLoader(modulename, path)\n"
+            "spec = importlib.util.spec_from_loader(loader.name, loader)\n"
+            "mod = importlib.util.module_from_spec(spec)\n"
+            "loader.exec_module(mod)\nprint(locals())\nprint(globals())\nprint(dir(mod))\n", globals); //, locals);
     bp::object retval = locals["mod"];
 
     PyErr_Print();
     //::handle<> handle(locals["newmodule"]);
     //boost::python object(handle);
-    //_PyObject_Dump(locals["newmodule"]);
     return retval;
     //return locals["newmodule"];
     //eturn locals["newmod"];
@@ -90,7 +89,28 @@ bp::object working_execfile(const char *filename, bp::object globals, bp::object
       //bp::error(bp::handle_exception());
     return bp::object();
   }
+*/
 
+//below code is from boost exec_file implementation
+// Set suitable default values for global and local dicts.
+  if (globals.is_none())
+  {
+    if (PyObject *g = PyEval_GetGlobals())
+      globals = bp::object(bp::detail::borrowed_reference(g));
+    else
+      globals = bp::dict();
+  }
+  if (locals.is_none()) locals = globals;
+
+  // Let python open the file to avoid potential binary incompatibilities.
+  FILE *fs = _Py_fopen(filename, "r");
+
+  PyObject* result = PyRun_FileEx(fs,
+                filename,
+                Py_file_input,
+                globals.ptr(), locals.ptr(),0);
+  if (!result) bp::throw_error_already_set();
+  return bp::object(bp::detail::new_reference(result));
 
 
 
@@ -106,8 +126,7 @@ int PythonPlugin::run_string(const char *cmd, bp::object &retval, bool as_file)
     try {
 	if (as_file) {
 	    retval = working_execfile(cmd, main_namespace, main_namespace);
-
-    //retval = bp::exec_file(cmd, main_namespace, main_namespace);
+        //retval = bp::exec_file(cmd, main_namespace, main_namespace);
     }
 	else {
 	    retval = bp::exec(cmd, main_namespace, main_namespace);
