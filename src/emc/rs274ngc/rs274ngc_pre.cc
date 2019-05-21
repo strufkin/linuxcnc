@@ -148,7 +148,7 @@ Interp::Interp()
 	// make "this" visible without importing interpreter explicitly
 	bp::object retval;
 	python_plugin->run_string("import interpreter", retval, false);
-	python_plugin->run_string("from interpreter import this\nprint(dir(this))\n", retval, false);
+	python_plugin->run_string("from interpreter import this\n", retval, false);
     }
     catch (bp::error_already_set) {
 	std::string exception_msg;

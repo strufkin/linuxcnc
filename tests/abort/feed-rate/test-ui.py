@@ -42,7 +42,7 @@ def wait_for_linuxcnc_startup(status, timeout=10.0):
             return
 
     # timeout, throw an exception
-    raise RuntimeError
+    raise RuntimeError()
 
 
 c = linuxcnc.command()
