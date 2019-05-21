@@ -50,7 +50,7 @@ class Calculator(QDialog):
                     self.digitClicked))
 
         self.pointButton = self.createButton(".", self.pointClicked)
-        self.changeSignButton = self.createButton(u"\N{PLUS-MINUS SIGN}",
+        self.changeSignButton = self.createButton("\N{PLUS-MINUS SIGN}",
                 self.changeSignClicked)
 
         self.backspaceButton = self.createButton("Backspace",
@@ -63,16 +63,16 @@ class Calculator(QDialog):
         self.setMemoryButton = self.createButton("MS", self.setMemory)
         self.addToMemoryButton = self.createButton("M+", self.addToMemory)
 
-        self.divisionButton = self.createButton(u"\N{DIVISION SIGN}",
+        self.divisionButton = self.createButton("\N{DIVISION SIGN}",
                 self.multiplicativeOperatorClicked)
-        self.timesButton = self.createButton(u"\N{MULTIPLICATION SIGN}",
+        self.timesButton = self.createButton("\N{MULTIPLICATION SIGN}",
                 self.multiplicativeOperatorClicked)
         self.minusButton = self.createButton("-", self.additiveOperatorClicked)
         self.plusButton = self.createButton("+", self.additiveOperatorClicked)
 
         self.squareRootButton = self.createButton("Sqrt",
                 self.unaryOperatorClicked)
-        self.powerButton = self.createButton(u"x\N{SUPERSCRIPT TWO}",
+        self.powerButton = self.createButton("x\N{SUPERSCRIPT TWO}",
                 self.unaryOperatorClicked)
         self.reciprocalButton = self.createButton("1/x",
                 self.unaryOperatorClicked)
@@ -145,7 +145,7 @@ class Calculator(QDialog):
                 return
 
             result = math.sqrt(operand)
-        elif clickedOperator == u"x\N{SUPERSCRIPT TWO}":
+        elif clickedOperator == "x\N{SUPERSCRIPT TWO}":
             result = math.pow(operand, 2.0)
         elif clickedOperator == "1/x":
             if operand == 0.0:
@@ -301,9 +301,9 @@ class Calculator(QDialog):
             self.sumSoFar += rightOperand
         elif pendingOperator == "-":
             self.sumSoFar -= rightOperand
-        elif pendingOperator == u"\N{MULTIPLICATION SIGN}":
+        elif pendingOperator == "\N{MULTIPLICATION SIGN}":
             self.factorSoFar *= rightOperand
-        elif pendingOperator == u"\N{DIVISION SIGN}":
+        elif pendingOperator == "\N{DIVISION SIGN}":
             if rightOperand == 0.0:
                 return False
 

@@ -71,7 +71,7 @@ class GcodeLexer(QsciLexerCustom):
             3: 'Assignment',
             4: 'Value',
             }
-        for key, value in self._styles.iteritems():
+        for key, value in self._styles.items():
             setattr(self, value, key)
         font = QFont()
         font.setFamily('Courier')
@@ -129,7 +129,7 @@ class GcodeLexer(QsciLexerCustom):
                 editor.SendScintilla(
                     editor.SCI_GETTEXTRANGE, start, end, source)
             else:
-                source = unicode(editor.text()).encode('utf-8')[start:end]
+                source = str(editor.text()).encode('utf-8')[start:end]
         if not source:
             return
 
@@ -607,7 +607,7 @@ class GcodeEditor(QWidget, _HalWidgetBase):
     def case(self):
         self.isCaseSensitive -=1
         self.isCaseSensitive *=-1
-        print self.isCaseSensitive
+        print(self.isCaseSensitive)
 
     def exitCall(self):
         self.exit()
@@ -630,8 +630,8 @@ class GcodeEditor(QWidget, _HalWidgetBase):
         self.editor.set_gcode_lexer()
 
     def nextCall(self):
-        self.next()
-    def next(self):
+        next(self)
+    def __next__(self):
         self.editor.search(str(self.searchText.text()),False)
         self.editor.search_Next()
 

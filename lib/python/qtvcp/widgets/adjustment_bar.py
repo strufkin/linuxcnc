@@ -223,7 +223,7 @@ class StatusAdjustmentBar(HAdjustmentBar, _HalWidgetBase):
             self.setMaximum(int(INFO.MAX_LINEAR_JOG_VEL))
         elif self.jograte_angular:
             STATUS.connect('jograte-angular-changed', lambda w, data: self.setValue(data))
-            print int(INFO.MAX_ANGULAR_JOG_VEL)
+            print(int(INFO.MAX_ANGULAR_JOG_VEL))
             self.setMaximum(int(INFO.MAX_ANGULAR_JOG_VEL))
         else:
            LOG.error('{} : no option recognised'.format(self.HAL_NAME_))

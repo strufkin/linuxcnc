@@ -2,7 +2,7 @@ import linuxcnc
 import hal
 
 # Set up logging
-import logger
+from . import logger
 log = logger.getLogger(__name__)
 # log.setLevel(logger.INFO) # One of DEBUG, INFO, WARNING, ERROR, CRITICAL
 
@@ -149,7 +149,7 @@ class _Lcnc_Action(object):
             outfile.write(source)
             STATUS.emit('update-machine-log', 'Saved: ' + fname, 'TIME')
         except Exception as e:
-            print e
+            print(e)
         finally:
             outfile.close()
 

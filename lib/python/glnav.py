@@ -1,20 +1,36 @@
 from minigl import *
+import OpenGL
+#OpenGL.ERROR_CHECKING = True 
+#OpenGL.ERROR_LOGGING = True 
+#OpenGL.FULL_LOGGING = True 
+#OpenGL.ERROR_ON_COPY = True 
+from OpenGL.GL import *
+from OpenGL.GLU import *
+
 import math
 import array, itertools
 
 def use_pango_font(font, start, count, will_call_prepost=False):
-    import pango, cairo, pangocairo
-    fontDesc = pango.FontDescription(font)
+    import gi
+    from gi.repository import Pango,PangoCairo
+    import cairo
+    #import pango, cairo, pangocairo
+    fontDesc = Pango.FontDescription(font)
     a = array.array('b', itertools.repeat(0, 256*256))
     surface = cairo.ImageSurface.create_for_data(a, cairo.FORMAT_A8, 256, 256)
-    context = pangocairo.CairoContext(cairo.Context(surface))
-    layout = context.create_layout()
-    fontmap = pangocairo.cairo_font_map_get_default()
+    #surface = cairo.image_surface_create(a, cairo.Format.A8, 256, 256)
+    ##context = PangoCairo.create_context(cairo.Context(surface))
+    context  = cairo.Context(surface)
+    pango_context = PangoCairo.create_context(context)
+    #print(dir(context))
+    #layout = context.create_layout()
+    layout = PangoCairo.create_layout(context)
+    fontmap = PangoCairo.font_map_get_default()
     font = fontmap.load_font(fontmap.create_context(), fontDesc)
     layout.set_font_description(fontDesc)
     metrics = font.get_metrics()
     descent = metrics.get_descent()
-    d = pango.PIXELS(descent)
+    d = Pango.SCALE * descent
     linespace = metrics.get_ascent() + metrics.get_descent()
     width = metrics.get_approximate_char_width()
 
@@ -31,9 +47,9 @@ def use_pango_font(font, start, count, will_call_prepost=False):
 
     base = glGenLists(count)
     for i in range(count):
-        ch = unichr(start+i)
-        layout.set_text(ch)
-        w, h = layout.get_size()
+        ch = chr(start+i)
+        layout.set_text(ch, -1)
+        w, h = layout.get_pixel_size()
         context.save()
         context.new_path()
         context.rectangle(0, 0, 256, 256)
@@ -46,21 +62,32 @@ def use_pango_font(font, start, count, will_call_prepost=False):
         context.set_source_rgba(1., 1., 1., 1.)
         context.set_operator (cairo.OPERATOR_SOURCE);
         context.move_to(0, 0)
-        context.update_layout(layout)
-        context.show_layout(layout)
+        #context.update_layout(layout)
+        #context.show_layout(layout)
+        PangoCairo.update_context(context,pango_context)
+        PangoCairo.show_layout(context,layout)
         context.restore()
-
-        w, h = pango.PIXELS(w), pango.PIXELS(h)
+        #w, h = Pango.SCALE * w, Pango.SCALE * h
         glNewList(base+i, GL_COMPILE)
-        glBitmap(0, 0, 0, 0, 0, h-d, '');
-        if not will_call_prepost: pango_font_pre()
-        if w and h: glDrawPixels(w, h, GL_LUMINANCE, GL_UNSIGNED_BYTE, a)
-        glBitmap(0, 0, 0, 0, w, -h+d, '');
-        if not will_call_prepost: pango_font_post()
+        glBitmap(0, 0, 0, 0, 0, h-d, ''.encode());
+        #glDrawPixels(0, 0, 0, 0, 0, h-d, '');
+        if not will_call_prepost:
+            pango_font_pre()
+        if w and h: 
+            try:
+                glDrawPixels(w, h, GL_LUMINANCE, GL_UNSIGNED_BYTE, a.tostring())
+            except Exception as e:
+                print("glnav Exception ",e)
+                print("glnav glGetError() ",glGetError())
+            
+
+        glBitmap(0, 0, 0, 0, w, -h+d, ''.encode());
+        if not will_call_prepost:
+            pango_font_post()
         glEndList()
 
     glPopClientAttrib()
-    return base, pango.PIXELS(width), pango.PIXELS(linespace)
+    return base, Pango.SCALE * width, Pango.SCALE * linespace
 
 def pango_font_pre(rgba=(1., 1., 0., 1.)):
     glPushAttrib(GL_COLOR_BUFFER_BIT)
@@ -97,7 +124,7 @@ def glRotateScene(w, s, xcenter, ycenter, zcenter, x, y, mousex, mousey):
     mat = glGetDoublev(GL_MODELVIEW_MATRIX)
 
     glLoadIdentity()
-    tx, ty, tz = mat[12:15]
+    tx, ty, tz = mat.flatten()[12:15]
     glTranslatef(tx, ty, tz)
     glRotatef(snap(lat), *w.rotation_vectors[0])
     glRotatef(snap(lon), *w.rotation_vectors[1])
@@ -106,7 +133,7 @@ def glRotateScene(w, s, xcenter, ycenter, zcenter, x, y, mousex, mousey):
     w.lon = lon
 
 def sub(x, y):
-    return map(lambda a, b: a-b, x, y)
+    return list(map(lambda a, b: a-b, x, y))
 
 def dot(x, y):
     t = 0
@@ -115,8 +142,8 @@ def dot(x, y):
     return t
 
 def glDistFromLine(x, p1, p2):
-    f = map(lambda x, y: x-y, p2, p1)
-    g = map(lambda x, y: x-y, x, p1)
+    f = list(map(lambda x, y: x-y, p2, p1))
+    g = list(map(lambda x, y: x-y, x, p1))
     return dot(g, g) - dot(f, g)**2/dot(f, f)
 
 def v3distsq(a,b):
@@ -167,8 +194,11 @@ class GlNavBase:
 
         self.activate()
         glLightfv(GL_LIGHT0, GL_POSITION, (1, -1, 1, 0))
-        glLightfv(GL_LIGHT0, GL_AMBIENT, (.4, .4, .4, 1))
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, (.6, .6, .6, 1))
+        glLightfv(GL_LIGHT0, GL_AMBIENT, (.0, .0, .0, 1))
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, (.0, .0, .0, 1))
+ 
+        #glLightfv(GL_LIGHT0, GL_AMBIENT, (.4, .4, .4, 1))
+        #glLightfv(GL_LIGHT0, GL_DIFFUSE, (.6, .6, .6, 1))
         glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT0)
         glDepthFunc(GL_LESS)

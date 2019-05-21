@@ -97,155 +97,155 @@ class VersaProbe(QtWidgets.QWidget, _HalWidgetBase):
     ######### rotation around z #####################
     # Y+Y+ 
     def pbtn_skew_yp_released(self):
-        print 'angle_yp_released'
+        print('angle_yp_released')
         result = self.read_page_data()
         if result:
             self.probe_angle_yp()
 
     # Y-Y- 
     def pbtn_skew_ym_released(self):
-        print 'angle_ym_released'
+        print('angle_ym_released')
         result = self.read_page_data()
         if result:
             self.probe_angle_ym()
 
     # X+X+ 
     def pbtn_skew_xp_released(self):
-        print 'angle_xp_released'
+        print('angle_xp_released')
         result = self.read_page_data()
         if result:
             self.probe_angle_xp()
 
     # X-X- 
     def pbtn_skew_xm_released(self):
-        print 'angle_xm_released'
+        print('angle_xm_released')
         result = self.read_page_data()
         if result:
             self.probe_angle_xm()
 
     ###### inside #######################
     def pbtn_inside_xpyp_released(self):
-        print ' Inside xpyp_released'
+        print(' Inside xpyp_released')
         result = self.read_page_data()
         if result:
             self.probe_inside_xpyp()
     def pbtn_inside_xpym_released(self):
-        print ' Inside xpym_released'
+        print(' Inside xpym_released')
         result = self.read_page_data()
         if result:
             self.probe_inside_xpym()
     def pbtn_inside_ym_released(self):
-        print ' Inside ym_released'
+        print(' Inside ym_released')
         result = self.read_page_data()
         if result:
             self.probe_ym()
     def pbtn_inside_xp_released(self):
-        print ' Inside xp_released'
+        print(' Inside xp_released')
         result = self.read_page_data()
         if result:
             self.probe_xp()
     def pbtn_inside_xmym_released(self):
-        print ' Inside xmym_released'
+        print(' Inside xmym_released')
         result = self.read_page_data()
         if result:
             self.probe_inside_xmym()
     def pbtn_inside_xm_released(self):
-        print ' Inside xm_released'
+        print(' Inside xm_released')
         result = self.read_page_data()
         if result:
             self.probe_xm()
     def pbtn_inside_xmyp_released(self):
-        print ' Inside xmyp_released'
+        print(' Inside xmyp_released')
         result = self.read_page_data()
         if result:
             self.probe_inside_xmtp()
     def pbtn_inside_yp_released(self):
-        print ' Inside yp1_released'
+        print(' Inside yp1_released')
         result = self.read_page_data()
         if result:
             self.probe_yp()
     def pbtn_inside_xy_hole_released(self):
-        print ' Inside xy_hole_released'
+        print(' Inside xy_hole_released')
         result = self.read_page_data()
         if result:
             self.probe_xy_hole()
     def pbtn_inside_length_x_released(self):
-        print ' Inside inside_length_x_released'
+        print(' Inside inside_length_x_released')
         result = self.read_page_data()
         if result:
             self.probe_inside_length_x()
     def pbtn_inside_length_y_released(self):
-        print ' Inside inside_length_y_released'
+        print(' Inside inside_length_y_released')
         result = self.read_page_data()
         if result:
             self.probe_inside_length_y()
 
     ####### outside #######################
     def pbtn_outside_xpyp_released(self):
-        print ' Outside xpyp_released'
+        print(' Outside xpyp_released')
         result = self.read_page_data()
         if result:
             self.probe_outside_xpyp()
     def pbtn_outside_xp_released(self):
-        print ' Outside xp_released'
+        print(' Outside xp_released')
         result = self.read_page_data()
         if result:
             self.probe_xp()
     def pbtn_outside_xpym_released(self):
-        print ' Outside xpym_released'
+        print(' Outside xpym_released')
         result = self.read_page_data()
         if result:
             self.probe_outside_xpym()
     def pbtn_outside_ym_released(self):
-        print ' Outside ym_released'
+        print(' Outside ym_released')
         result = self.read_page_data()
         if result:
             self.probe_ym()
     def pbtn_outside_yp_released(self):
-        print ' Outside yp_released'
+        print(' Outside yp_released')
         result = self.read_page_data()
         if result:
             self.probe_yp()
     def pbtn_outside_xmym_released(self):
-        print ' Outside xmym_released'
+        print(' Outside xmym_released')
         result = self.read_page_data()
         if result:
             self.probe_outside_xmym()
     def pbtn_outside_xm_released(self):
-        print ' Outside xm_released'
+        print(' Outside xm_released')
         result = self.read_page_data()
         if result:
             self.probe_xm()
     def pbtn_outside_xmyp_released(self):
-        print ' Outside xmyp_released'
+        print(' Outside xmyp_released')
         result = self.read_page_data()
         if result:
             self.probe_outside_xmyp()
     def pbtn_outside_center_released(self):
-        print ' Outside xy_center_released'
+        print(' Outside xy_center_released')
         result = self.read_page_data()
         if result:
             self.probe_xy_hole()
     def pbtn_outside_length_x_released(self):
-        print ' Outside length X_released'
+        print(' Outside length X_released')
         result = self.read_page_data()
         if result:
             self.probe_outside_length_x()
     def pbtn_outside_length_y_released(self):
-        print ' Outside_length_Y_released'
+        print(' Outside_length_Y_released')
         result = self.read_page_data()
         if result:
             self.probe_outside_length_y()
 
     ####### straight #######################
     def pbtn_down_released(self):
-        print 'Straight down_released'
+        print('Straight down_released')
         result = self.read_page_data()
         if result:
             self.probe_down()
 
     def pbtn_measure_diam_released(self):
-        print 'Mesaure diameter'
+        print('Mesaure diameter')
         result = self.read_page_data()
         if result:
             self.probe_measure_diam()
@@ -390,7 +390,7 @@ class VersaProbe(QtWidgets.QWidget, _HalWidgetBase):
             s +=  " X%.4f"%a[0]
             s +=  " Y%.4f"%a[1]
         s +=  " R%.4f"% float(self.data_input_adj_angle)
-        print "s=",s
+        print("s=",s)
         if ACTION.CALL_MDI_WAIT(s) == -1:
             return
 

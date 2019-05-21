@@ -69,7 +69,7 @@ class ToolOffsetView(QTableView, _HalWidgetBase):
         STATUS.connect('metric-mode-changed', lambda w, data: self.metricMode(data))
         STATUS.connect('tool-in-spindle-changed', lambda w, data: self.currentTool(data))
         conversion = {0:"X", 1:"Y", 2:"Z", 3:"A", 4:"B", 5:"C", 6:"U", 7:"V", 8:"W"}
-        for num, let in conversion.iteritems():
+        for num, let in conversion.items():
             if let in (INFO.AVAILABLE_AXES):
                 continue
             self.hideColumn(num+2)
@@ -142,7 +142,7 @@ class ToolOffsetView(QTableView, _HalWidgetBase):
         row = new.row()
         col = new.column()
         data = self.tablemodel.data(new)
-        print 'Entered data:', data, row,col
+        print('Entered data:', data, row,col)
         if col is not 15:
             # set the text style based on unit type
             if self.metric_display:
@@ -158,7 +158,7 @@ class ToolOffsetView(QTableView, _HalWidgetBase):
                 LOG.exception(e)
                 qualified = None
 
-            print ' QUALIFIED:', qualified
+            print(' QUALIFIED:', qualified)
         # now update linuxcnc to the change
         try:
             if self.IS_RUNNING:
@@ -253,7 +253,7 @@ class MyTableModel(QAbstractTableModel):
         LOG.debug(">>> setData() index.row = {}".format(index.row()))
         LOG.debug(">>> setData() index.column = {}".format(index.column()))
         self.arraydata[index.row()][index.column()] = v
-        print self.arraydata[index.row()][index.column()]
+        print(self.arraydata[index.row()][index.column()])
         self.dataChanged.emit(index, index)
         return True
 

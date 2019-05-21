@@ -240,7 +240,7 @@ class Keylookup:
         try:
             return self.keycall[binding]
         except:
-            print "No key function call"
+            print("No key function call")
             return None
 
     # add a keyname and function name
@@ -248,6 +248,6 @@ class Keylookup:
         try:
             self.keycall[binding] = function
         except:
-            print "Binding %s could not be added"% binding
+            print("Binding %s could not be added"% binding)
 
 

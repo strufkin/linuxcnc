@@ -131,7 +131,7 @@ class  GCodeGraphics(Lcnc_3dGraphics, _HalWidgetBase):
             self.load_program(None, self._reload_filename)
             self.set_zoom_distance(dist)
         except:
-            print 'error', self._reload_filename
+            print('error', self._reload_filename)
             pass
 
 

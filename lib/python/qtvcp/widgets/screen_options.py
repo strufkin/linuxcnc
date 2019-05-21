@@ -304,12 +304,12 @@ class ScreenOptions(QtWidgets.QWidget, _HalWidgetBase):
                 try:
                     temp = XEmbeddable()
                     temp.embed(cmd)
-                except Exception, e:
+                except Exception as e:
                     LOG.error('Embedded tab loading failed: {}'.format(name))
                 else:
                     try:
                         self.QTVCP_INSTANCE_[tab].addTab(temp, name)
-                    except Exception, e:
+                    except Exception as e:
                         LOG.error('Embedded tab adding widget into {} failed.'.format(tab))
 
     def init_tool_dialog(self):

@@ -16,7 +16,7 @@
 # use open cv to do camera alignment
 
 import sys
-import thread as Thread
+import _thread as Thread
 
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtGui import QColor, QFont, QPainter, QPen, QImage

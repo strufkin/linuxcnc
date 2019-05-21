@@ -41,7 +41,7 @@ class FileManagerBase(QFileDialog, _HalWidgetBase):
 
     # override open button
     def accept(self):
-        print 'open', self.selectedFiles()
+        print('open', self.selectedFiles())
 
         fname = self.selectedFiles()[0]
         path = self.directory().absolutePath()

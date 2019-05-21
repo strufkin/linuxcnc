@@ -127,14 +127,14 @@ class Notify:
         n.close()
 
     def OnClicked(self, n, signal_text):
-        print '1: ' + str(n)
-        print '2: ' + str(signal_text)
+        print(('1: ' + str(n)))
+        print(('2: ' + str(signal_text)))
         n.close()
 
     def action_callback(self, *args, **kwds):
-        print '\nAll recorded messages:'
+        print('\nAll recorded messages:')
         for num,i in enumerate(self.alarmpage):
-            print num,i
+            print((num,i))
 
     def show_status(self, message, timeout=4):
         if self.statusbar is not None:

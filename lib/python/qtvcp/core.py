@@ -2,7 +2,8 @@
 # vim: sts=4 sw=4 et
 
 import linuxcnc
-import gobject
+import gi
+from gi.repository import GObject
 
 import _hal, hal
 from PyQt5.QtCore import QObject, QTimer, pyqtSignal
@@ -10,7 +11,7 @@ from hal_glib import _GStat as GladeVcpStat
 from qtvcp.qt_istat import _IStat as IStatParent
 
 # Set up logging
-import logger
+from . import logger
 log = logger.getLogger(__name__)
 # log.setLevel(logger.INFO) # One of DEBUG, INFO, WARNING, ERROR, CRITICAL
 
@@ -110,8 +111,8 @@ class _GStat(GladeVcpStat):
     #TODO why do we need to do this with qt5 and not qt4?
     # seg fault without it
     def set_timer(self):
-        gobject.threads_init()
-        gobject.timeout_add(100, self.update)
+        GObject.threads_init()
+        GObject.timeout_add(100, self.update)
 
 # used so all qtvcp widgets use the same instance of _gstat
 # this keeps them all in synch

@@ -369,7 +369,7 @@ def main():
     # class patching is my new thing
     # class patch the OK button
     def newOk(w):
-        print 'Ok'
+        print('Ok')
         w.text = 'OK'
         # make update
         w.hide()

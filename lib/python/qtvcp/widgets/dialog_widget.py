@@ -1011,7 +1011,7 @@ class EntryDialog(QDialog, _HalWidgetBase):
             try:
                 return float(self.Num.text())
             except Exception as e:
-                print e
+                print(e)
         return None
 
     def calculate_placement(self):
@@ -1142,7 +1142,7 @@ def geometry_parsing(widget, prefname):
                 px = widget.topParent.geometry().x()
                 py = widget.topParent.geometry().y()
                 # remove everything except digits and spaces
-                temp =  filter(lambda x: (x.isdigit() or x == ' '), widget._geometry_string)
+                temp =  [x for x in widget._geometry_string if (x.isdigit() or x == ' ')]
                 # remove lead and trailing spaces and then slit on spaces
                 temp = temp.strip(' ').split(' ')
                 go(px+int(temp[0]), py+int(temp[1]), int(temp[2]), int(temp[3]))
