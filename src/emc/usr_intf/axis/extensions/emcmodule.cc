@@ -2196,7 +2196,6 @@ static struct PyModuleDef linuxcnc_moduledef = {
 MODULE_INIT_FUNC(linuxcnc)
 {
         
-    printf("PyModule_create_entered\n");
     verbose_nml_error_messages = 0;
     clear_rcs_print_flag(~0);
 
@@ -2207,7 +2206,6 @@ MODULE_INIT_FUNC(linuxcnc)
     error = PyErr_NewException((char*)"linuxcnc.error", PyExc_RuntimeError, NULL);
 
     m = PyModule_Create(&linuxcnc_moduledef);
-    printf("PyModule_PreAddObject entered\n");
     PyModule_AddObject(m, "stat", (PyObject*)&Stat_Type);
     PyModule_AddObject(m, "command", (PyObject*)&Command_Type);
     PyModule_AddObject(m, "error_channel", (PyObject*)&Error_Type);
@@ -2317,8 +2315,6 @@ MODULE_INIT_FUNC(linuxcnc)
     ENUM(RCS_DONE);
     ENUM(RCS_EXEC);
     ENUM(RCS_ERROR);
-    printf("InitFinished\n");
-    _PyObject_Dump(m);
     return m;
 }
 
